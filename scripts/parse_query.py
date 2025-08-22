@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from typing import List, Dict
 from openai import OpenAI
 from scripts.config import get_openai_client
+from scripts.text_utils import detect_age_from_text, BASE_STOPWORDS as STOPWORDS, norm as _norm, clean_themes as _clean_themes
+
 
 client = get_openai_client()
 
@@ -21,53 +23,16 @@ THEME_NORMALIZATION = {
     "friendships": "friendship",
 }
 
-# ---------- Configs ----------
-STOPWORDS = {
-    "book","books","about","for","a","an","the","and","or","with","on","like",
-    "kids","kid","child","children","of","to","please","show","find",
-    "i","im","i'm","want","looking","that","this","is","are","need","some","something","who",
-    "recommend","recommendation","recommendations",
-    "year","years","yr","yrs","yo","old"
-}
-
-
 # ---------- Helpers ----------
 def _norm(s: str) -> str:
     return re.sub(r"\s+", " ", (s or "").strip().lower())
 
 def _user_supplied_age(text: str) -> str:
-    """Return normalized 'A-B' for ranges or single 'N' IF the user typed it; else ''."""
-    t = (text or "").lower()
-
-    # ranges like "6-8" (and en/em dashes)
-    m = re.search(r"\b(\d{1,2})\s*[–—-]\s*(\d{1,2})\b", t)
-    if m:
-        a, b = m.groups()
-        return f"{a}-{b}"
-
-    # "age 5"
-    m = re.search(r"\bage\s*(\d{1,2})\b", t)
-    if m:
-        return m.group(1)
-
-    # "5 year old", "5yo", "5 yr old", "5year old", "5yrs"
-    m = re.search(r"\b(\d{1,2})\s*(?:yo|yr|yrs?|year|years)?\s*(?:old)?\b", t)
-    if m:
-        return m.group(1)
-
-    # super-stuck variant: "5yearold"
-    m = re.search(r"\b(\d{1,2})yearold\b", t)
-    if m:
-        return m.group(1)
-
-    return ""
-
-
-
+    return detect_age_from_text(text)
 
 def _tokenize(text: str) -> List[str]:
     # keep alphabetic words, drop stopwords and short tokens
-    words = re.findall(r"[a-zA-Z]+", _norm(text))
+    words = re.findall(r"[a-z]+", _norm(text))
     return [w for w in words if w not in STOPWORDS and len(w) >= 3]
 
 

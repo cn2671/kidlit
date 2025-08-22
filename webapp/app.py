@@ -12,6 +12,14 @@ parent_dir = os.path.dirname(current_dir)
 sys.path.insert(0, parent_dir)
 
 from scripts.parse_query import parse_user_query
+from scripts.text_utils import (
+    BASE_STOPWORDS as STOPWORDS,   
+    TITLE_STOPWORDS,
+    tokenize_alpha,
+    clean_themes as _clean_themes, 
+    detect_age_from_text,
+    strip_age_category_tokens,
+)
 from scripts.recommender import recommend_books
 from scripts.recommender import parse_age_span
 
@@ -214,16 +222,14 @@ def sanitize_parsed(user_text: str, parsed: dict) -> dict:
     themes = _as_list(out.get("themes", []))
     tone   = (out.get("tone") or "").strip()
 
-    # --- DO NOT demote canonical tones ---
+    # keep canonical tones
     if tone and not is_canonical_tone(tone):
-        # Only consider demotion if it's not a known tone
         if should_treat_as_theme(tone):
             if _norm(tone) not in [_norm(x) for x in themes]:
                 themes.append(tone)
             out["tone"] = ""
             tone = ""
 
-    # If still no tone, promote a theme that behaves like a tone
     if not tone:
         for w in list(themes):
             if is_canonical_tone(w) or should_treat_as_tone(w):
@@ -231,11 +237,23 @@ def sanitize_parsed(user_text: str, parsed: dict) -> dict:
                 themes = [t for t in themes if _norm(t) != _norm(w)]
                 break
 
-    out["themes"] = _clean_themes(themes)
+    # AGE: detect from user text (numeric or category)
+    age = detect_age_from_text(user_text)
+    out["age_range"] = age
 
-    # Set age exactly to what the user typed (single number or A-B range); otherwise empty
-    out["age_range"] = _user_supplied_age(user_text)
+    # If an age category phrase was used, strip its words from themes
+    themes = strip_age_category_tokens(themes, user_text)
+
+    # Remove explicit age words and bare numbers from themes
+    AGE_WORDS = {"year","years","yr","yrs","yo","old"}
+    themes = [
+        t for t in themes
+        if _norm(t) not in AGE_WORDS and not re.fullmatch(r"\d+", _norm(t))
+    ]
+
+    out["themes"] = _clean_themes(themes)
     return out
+
 
 
 
@@ -761,29 +779,6 @@ def render_book_grid(df, prefix="rec", show_actions=True, cols=3, page_mode: str
             with row_cols[j]:
                 render_book_card(df.iloc[idx], f"{prefix}_{idx}", show_actions=show_actions, page_mode=page_mode)
 
-
-STOPWORDS = {
-    "book","books","about","for","a","an","the","and","or","with","on","like",
-    "kids","kid","child","children","of","to","please","show","find",
-    "i","im","i'm","want","looking","that","this","is","are","need","some","something","who",
-    "recommend","recommendation","recommendations",
-    "year","years","yr","yo","old"
-}
-
-def _clean_themes(lst):
-    """Normalize & remove filler tokens from theme list."""
-    out = []
-    seen = set()
-    for x in _as_list(lst):
-        w = _norm(x)
-        if not w or len(w) < 3:        # ditch 1–2 char tokens
-            continue
-        if w in STOPWORDS:             # ditch filler words
-            continue
-        if w not in seen:
-            seen.add(w); out.append(w)
-    return out
-
 # ------------- UI -------------
 
 # Sidebar branding
@@ -874,21 +869,8 @@ if page == "Recommendations":
             # --- Title search (exact + token AND fuzzy) ---
             mask_exact = (df["title_norm"] == q_norm) | (df["ol_title_norm"] == q_norm)
 
-            tokens = re.findall(r"[a-z0-9]+", q_norm)
-            tokens = [t for t in tokens if t not in STOPWORDS and len(t) >= 3]
+            tokens = [t for t in tokenize_alpha(q_norm) if t not in TITLE_STOPWORDS]
 
-            # Tokenize for fuzzy title/author search, but keep only alphabetic words,
-            # drop stopwords, drop very short tokens, and drop any token that contains digits (e.g. "5year")
-            RAW_STOPWORDS = {
-                "i","im","i'm","want","looking","that","this","is","are","need","some","something","who",
-                "book","books","about","for","a","an","the","and","or","with","on","like","please",
-                "kids","kid","child","children","of","to","show","find","recommend","recommendation","recommendations",
-                "year","years","yr","yo","old"
-            }
-
-            # alphabetic only (prevents "5year")
-            alpha_tokens = re.findall(r"[a-z]+", q_norm)  # <-- only a-z, no digits
-            tokens = [t for t in alpha_tokens if len(t) >= 3 and t not in RAW_STOPWORDS]
 
             if tokens:
                 mask_fuzzy = True
@@ -902,7 +884,7 @@ if page == "Recommendations":
 
             title_hits = df[mask_exact | mask_fuzzy]
 
-            # --- AUTHOR FALLBACK (ADD THIS BLOCK) ---
+            # --- AUTHOR FALLBACK  ---
             if title_hits.empty and tokens:  # q_norm already truthy, reuse the same tokens
                 mask_author = True
                 for t in tokens:
@@ -977,7 +959,7 @@ if page == "Recommendations":
                 parse_user_query(st.session_state.user_query)
             )
 
-        themes_list    = _as_list(parsed.get('themes', []))
+        themes_list    = _clean_themes(parsed.get('themes', []))
         themes_display = ", ".join(themes_list) if themes_list else "—"
         tone_display   = parsed.get('tone') or "—"
         age_display    = parsed.get("age_range") or "—"
