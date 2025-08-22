@@ -32,9 +32,9 @@ def enrich_with_description(input_csv, output_csv):
         else:
             book["description"] = ""
 
-        time.sleep(1)  # be polite
+        time.sleep(1) 
 
-    # Save to new CSV
+    # Save to CSV
     fieldnames = list(books[0].keys())
     with open(output_csv, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -44,7 +44,7 @@ def enrich_with_description(input_csv, output_csv):
     print(f"Saved enriched file with descriptions to {output_csv}")
 
 
-# Run the enrichment
+# Run script
 if __name__ == "__main__":
     enrich_with_description(
         input_csv="books_with_openlibrary_matches.csv",

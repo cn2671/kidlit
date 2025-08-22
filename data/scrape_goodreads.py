@@ -59,5 +59,5 @@ def save_books_to_csv(books, filename="goodreads_top_children_books.csv"):
 # --- Run the scraper ---
 if __name__ == "__main__":
     list_url = "https://www.goodreads.com/list/show/86.Best_Children_s_Books"
-    books = scrape_goodreads_list(list_url, num_books=150)
+    books = scrape_goodreads_list(list_url, num_books = 500)
     save_books_to_csv(books)
