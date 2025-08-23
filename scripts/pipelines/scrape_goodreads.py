@@ -2,10 +2,12 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import csv
+from pathlib import Path
+
 
 def scrape_goodreads_list(list_url, num_books=100):
     headers = {
-        "User-Agent": "Mozilla/5.0 (compatible; ReadBuddyBot/1.0)"
+        "User-Agent": "Mozilla/5.0 (compatible; KidLit/1.0)"
     }
 
     books = []
@@ -47,17 +49,21 @@ def scrape_goodreads_list(list_url, num_books=100):
     return books
 
 
-def save_books_to_csv(books, filename="goodreads_top_children_books.csv"):
-    keys = books[0].keys()
-    with open(filename, "w", newline="", encoding="utf-8") as f:
+def save_books_to_csv(books, filename="goodreads_top_children_books.csv", folder=None):
+    path = Path(folder) / filename if folder else Path(filename)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    keys = books[0].keys() if books else ["title","author","goodreads_url"]
+    with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=keys)
         writer.writeheader()
         writer.writerows(books)
-    print(f"Saved {len(books)} books to {filename}")
+    print(f"Saved {len(books)} books to {path.resolve()}")
 
 
 # --- Run the scraper ---
 if __name__ == "__main__":
     list_url = "https://www.goodreads.com/list/show/86.Best_Children_s_Books"
-    books = scrape_goodreads_list(list_url, num_books = 500)
-    save_books_to_csv(books)
+    books = scrape_goodreads_list(list_url, num_books = 1000)
+    save_books_to_csv(books, filename="goodreads_top_children_books.csv", folder="data")
+

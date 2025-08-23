@@ -5,16 +5,25 @@ import time
 import pandas as pd
 from openai import OpenAI
 from dotenv import load_dotenv
+from pathlib import Path
+from scripts.core.config import get_openai_client
 
-# Load API key from .env 
-load_dotenv()
-api_key = os.getenv("OPENAI_API_KEY")
-if not api_key:
-    raise ValueError("OPENAI_API_KEY not found. Please set it in your .env file or environment variables.")
-client = OpenAI(api_key=api_key) 
+ROOT = Path(__file__).resolve().parents[2]   # project root
+DATA_DIR = ROOT / "data"
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+# # Load API key from .env 
+# load_dotenv()
+# api_key = os.getenv("OPENAI_API_KEY")
+# if not api_key:
+#     raise ValueError("OPENAI_API_KEY not found. Please set it in your .env file or environment variables.")
+# client = OpenAI(api_key=api_key) 
+
+# Initialize OpenAI client 
+client = get_openai_client()
 
 # Load data
-df = pd.read_csv("books_cleaned.csv")
+df = pd.read_csv(DATA_DIR / "books_cleaned.csv")
 results = []
 
 def clean_description(desc):
@@ -194,8 +203,9 @@ if not bad_rows.empty:
 
 # Filter out bad ones
 df_cleaned = llm_df[~llm_df["needs_fix"]]
-df_cleaned.to_csv("books_llm_tags.csv", index=False)
-print("\n✅ Saved cleaned data to books_llm_tags.csv")
+out_path = DATA_DIR / "books_llm_tags.csv"
+df_cleaned.to_csv(out_path, index=False)
+print(f"\nSaved cleaned data to {out_path.resolve()}")
 
 print(f"\n🔎 Total processed: {len(results)}")
 print(f"✅ Rows with good summaries: {len(df_cleaned)}")

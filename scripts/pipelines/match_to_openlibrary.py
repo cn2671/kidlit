@@ -2,6 +2,7 @@ import csv
 import requests
 import time
 import re
+from pathlib import Path
 
 def normalize_title(title: str) -> str:
     """
@@ -80,8 +81,13 @@ def search_openlibrary(title, author):
 
     return None
 
-def enrich_with_openlibrary(input_csv, output_csv):
-    with open(input_csv, newline="", encoding="utf-8") as infile:
+def enrich_with_openlibrary(input_csv, output_csv, folder=None):
+    folder = Path(folder) if folder else Path(".")
+    folder.mkdir(parents=True, exist_ok=True)
+    in_path  = Path(input_csv)  if Path(input_csv).is_absolute()  else folder / input_csv
+    out_path = Path(output_csv) if Path(output_csv).is_absolute() else folder / output_csv
+
+    with in_path.open(newline="", encoding="utf-8") as infile:
         reader = csv.DictReader(infile)
         books = list(reader)
 
@@ -120,15 +126,17 @@ def enrich_with_openlibrary(input_csv, output_csv):
         time.sleep(1) 
 
     # Save results
-    fieldnames = list(enriched_books[0].keys())
-    with open(output_csv, "w", newline="", encoding="utf-8") as f:
+    fieldnames = list(enriched_books[0].keys()) if enriched_books else ["title","author","goodreads_url","ol_title","ol_author","cover_url","openlibrary_url"]
+    with out_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(enriched_books)
-    print(f"Saved enriched data to {output_csv}")
+
+    print(f"Saved enriched data to {out_path.resolve()}")
 
 if __name__ == "__main__":
     enrich_with_openlibrary(
         input_csv="goodreads_top_children_books.csv",
-        output_csv="books_with_openlibrary_matches.csv"
+        output_csv="books_with_openlibrary_matches.csv",
+        folder="data"
     )
