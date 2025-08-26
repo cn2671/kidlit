@@ -2,18 +2,17 @@ from __future__ import annotations
 import urllib.parse
 import streamlit as st
 from typing import Any, Iterable
+from urllib.parse import quote_plus
+from html import escape as hesc
 from webapp.data_io import as_dict, _book_key, _norm, _norm_title
+
+from ..data_io import as_dict, _book_key, _norm, _norm_title, _safe_key_fragment
 
 
 
 # ==============================================================================
 # Rendering helpers for cards
 # ==============================================================================
-
-def _safe_key_fragment(s: str) -> str:
-    """Return a filesystem/HTML‑id friendly fragment."""
-    import re
-    return re.sub(r"[^a-z0-9_-]+", "_", _norm(s))[:60]
 
 
 def _pills_html(themes: Iterable[str] | str) -> str:
@@ -160,11 +159,37 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
                 st.markdown(f'<div class="k-summary-full">{full_summary}</div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="k-summary-full"><em>No summary available.</em></div>', unsafe_allow_html=True)
-            links = []
-            if data.get("goodreads_url"):
-                links.append(f'[Goodreads]({data.get("goodreads_url")})')
-            if data.get("openlibrary_url"):
-                links.append(f'[Open Library]({data.get("openlibrary_url")})')
-            if links:
-                st.markdown(" • ".join(links))
-            st.markdown('</div>', unsafe_allow_html=True)
+
+
+            # Centered, robust link buttons (with fallbacks)
+            GR_ICON = "https://cdn.simpleicons.org/goodreads/5A4634"
+
+            title_for_links  = _nz(data.get("title")) or _nz(data.get("ol_title"))
+            author_for_links = _nz(data.get("author")) or _nz(data.get("ol_author"))
+            
+            goodreads_url = (data.get("goodreads_url") or "").strip()
+            amazon_url    = (data.get("amazon_url") or "").strip()
+            # Fallback searches if explicit URLs missing
+            # Fallbacks if missing
+            if not goodreads_url and title_for_links:
+                goodreads_url = f"https://www.goodreads.com/search?q={quote_plus(f'{title_for_links} {author_for_links}')}"
+            if not amazon_url and title_for_links:
+                amazon_url = f"https://www.amazon.com/s?k={quote_plus(f'{title_for_links} {author_for_links}')}"
+
+            btns = []
+            if goodreads_url:
+                btns.append(
+                    f'<a class="k-iconbtn k-iconbtn--goodreads" href="{hesc(goodreads_url, True)}" '
+                    f'target="_blank" rel="noopener noreferrer" aria-label="Open on Goodreads">'
+                    f'<img src="{GR_ICON}" class="k-ico" alt="Goodreads" loading="lazy" /></a>'
+                )
+            if amazon_url:
+                btns.append(
+                    f'<a class="k-iconbtn k-iconbtn--amazon" href="{hesc(amazon_url, True)}" '
+                    f'target="_blank" rel="noopener noreferrer" aria-label="Open on Amazon">'
+                    f'<i class="fa-brands fa-amazon k-fa" aria-hidden="true"></i>'
+                    f'</a>'
+                )
+
+            if btns:
+                st.markdown('<div class="k-linkbar">' + "".join(btns) + "</div>", unsafe_allow_html=True)

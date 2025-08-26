@@ -9,6 +9,30 @@ def inject_global_css():
         '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">',
         unsafe_allow_html=True,
     )
+
+    st.markdown(
+        '<link rel="stylesheet" '
+        'href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">',
+        unsafe_allow_html=True,
+    )
+
+    # ADD Font Awesome ONCE, as a string
+    st.markdown(
+        '<link rel="stylesheet" '
+        'href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">',
+        unsafe_allow_html=True,
+    )
+
+    # ADD the .k-fa rule INSIDE a <style> block (as a string)
+    st.markdown(
+        """
+        <style>
+          .k-fa { font-size: 20px; line-height: 1; }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.markdown("""
 <style>
 :root{
@@ -97,7 +121,7 @@ def inject_global_css():
 .k-header-actions{ margin: 10px 16px 0 16px; }
 
 /* Body & divider */
-.k-card-body{ padding: 16px 24px; }
+.k-card-body{ padding: 16px 24px 28px; overflow: visible; }
 .k-divider{ height:1px; background:#e5e7eb; margin: 0 16px; }
 
 /* Summary spacing + side padding */
@@ -290,7 +314,7 @@ div[data-testid="stSidebar"] .stRadio > div[role="radiogroup"] label[data-basewe
   box-shadow: 0 0 6px rgba(99, 102, 241, 0.25);
 }
 
-/* Hide BaseWeb's radio-dot block in the sidebar menu */
+/* Hide radio-dot block in the sidebar menu */
 section[data-testid="stSidebar"] .stRadio [role="radiogroup"] > label[data-baseweb="radio"] > div:first-child,
 section[data-testid="stSidebar"] .stRadio [role="radiogroup"] > label[data-baseweb="radio"] > div:first-child * {
   display: none !important;              /* removes the dot wrapper and its inner circle */
@@ -307,6 +331,55 @@ section[data-testid="stSidebar"] .stRadio input[type="radio"] {
 section[data-testid="stSidebar"] .stRadio [role="radiogroup"] > label[data-baseweb="radio"] {
   padding-left: 12px !important;
 }
+
+/* --- External link buttons under Sneak Peek --- */
+/* Centered bar under the summary */
+/* Centered bar under the summary */
+.k-linkbar{
+  display:flex; justify-content:center; align-items:center;
+  gap:12px;
+  margin:16px 0 16px;        
+  flex-wrap:wrap;
+}
+
+/* Icon-only circular buttons */
+.k-iconbtn{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:40px; height:40px; border-radius:999px;
+  border:1px solid #e5e7eb; background:#ffffff;
+  box-shadow:0 1px 2px rgba(0,0,0,.06);
+  text-decoration:none;
+}
+.k-iconbtn:hover{ filter:brightness(0.98); transform: translateY(-1px); }
+.k-iconbtn:focus-visible{ outline:2px solid #6366f1; outline-offset:2px; border-color:#6366f1; }
+
+/* Icon buttons */
+.k-iconbtn--goodreads,
+.k-iconbtn--amazon{
+  background:#ffffff !important;   /* or: background: transparent */
+  border-color:#e5e7eb !important; /* slate-300 */
+  box-shadow:0 1px 2px rgba(0,0,0,.06);
+}
+.k-iconbtn:hover{ filter: none; box-shadow:0 2px 6px rgba(0,0,0,.10); }
+
+
+/* Icon size */
+.k-ico{ width:20px; height:20px; display:block; }
+
+/* Ensure buttons aren’t clipped or blocked */
+.k-card-body, .k-linkbar { position: relative; z-index: 5; overflow: visible; }
+[data-testid="stVerticalBlock"]:has(> .element-container .k-card-sentinel),
+[data-testid="column"]:has(> .element-container .k-card-sentinel){
+  overflow: visible; position: relative;
+}
+[data-testid="stVerticalBlock"]:has(> .element-container .k-card-sentinel)::after,
+[data-testid="column"]:has(> .element-container .k-card-sentinel)::after{
+  pointer-events: none;
+}
+
+
+
+
 
 </style>
 """, unsafe_allow_html=True)

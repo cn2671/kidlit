@@ -470,7 +470,11 @@ def recommend_books(
         work = work.sort_values(by=sort_cols, ascending=[False] * len(sort_cols))
 
     # -------- Select output columns --------
-    cols = [c for c in ["title", "author", "cover_url", "summary_gpt", "themes", "tone", "age_range"] if c in work.columns]
+    cols = [c for c in [
+        "title", "author", "cover_url", "summary_gpt", "themes", "tone", "age_range",
+        "goodreads_url", "openlibrary_url", "description", "summary",
+        "ol_title", "ol_author"
+        ] if c in work.columns]
     out = work[cols].copy().fillna("")
 
     # -------- Limit if n given --------

@@ -1,4 +1,4 @@
-"""KidLit — Streamlit app for personalized children's book recommendations.
+"""KidLit — App for personalized children's book recommendations.
 """
 
 # IMPORTS
@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import urllib.parse
+from collections import Counter
 from typing import Any, Dict, Iterable, List, MutableMapping
 
 # --- Project imports / path setup -------------------------------------------------
@@ -58,6 +59,16 @@ def _as_list(x: Any) -> List[str]:
 def _reset_pagination() -> None:
     st.session_state.page_num_recs = 1
 
+
+def _goto_recs():
+    st.session_state._nav_target = "🔎 Recommendations"
+    st.rerun()
+
+def _set_query_and_page(q):
+    st.session_state.user_query = q
+    st.session_state.do_search = True   # your search trigger
+    st.session_state._nav_target = "🔎 Recommendations"
+    st.rerun() 
 
 # --- Theme/Tone heuristics -------------------------------------------------------
 
@@ -153,6 +164,46 @@ def is_canonical_tone(word: str) -> bool:
     return _norm(word) in TONE_CANON
 
 
+import re  # (you already have this at the top)
+
+def _age_sort_key(token: str) -> tuple[int, int]:
+    """
+    Normalize an age token (e.g., '3–5', '6-8', '5', 'young adult', 'middle grade')
+    into a (lo, hi) tuple so we can sort consistently.
+    Unknowns sort to the end.
+    """
+    t = (token or "").strip().lower().replace("–", "-").replace("—", "-")
+
+    # Map common labels to numeric spans
+    LABEL_SPANS = {
+        "baby": (0, 2), "infant": (0, 2),
+        "toddler": (1, 3), "toddlers": (1, 3),
+        "preschool": (3, 5), "pre-school": (3, 5), "pre k": (3, 5), "pre-k": (3, 5), "prek": (3, 5),
+        "kindergarten": (5, 6), "kinder": (5, 6),
+        "early reader": (6, 8), "early readers": (6, 8), "beginner reader": (6, 8), "beginning reader": (6, 8),
+        "chapter book": (6, 9), "chapter books": (6, 9),
+        "middle grade": (8, 12), "middle-grade": (8, 12), "mg": (8, 12),
+        "young adult": (12, 18), "ya": (12, 18), "teen": (12, 18), "teens": (12, 18),
+    }
+    if t in LABEL_SPANS:
+        return LABEL_SPANS[t]
+
+    # Numeric range like '3-5'
+    m = re.fullmatch(r"(\d{1,2})-(\d{1,2})", t)
+    if m:
+        lo, hi = int(m.group(1)), int(m.group(2))
+        return (lo, hi) if lo <= hi else (hi, lo)
+
+    # Single age like '5'
+    m = re.fullmatch(r"\d{1,2}", t)
+    if m:
+        x = int(m.group(0))
+        return (x, x)
+
+    # Push unknowns to the end
+    return (999, 999)
+
+
 # ==============================================================================
 # Page Config & Session State
 # ==============================================================================
@@ -164,12 +215,30 @@ for key in ["user_query", "generated", "liked_books", "skipped_books", "read_boo
     if key not in st.session_state:
         st.session_state[key] = [] if key.endswith("_books") else (False if key == "generated" else "")
 
+
+if "menu_radio" not in st.session_state:
+    st.session_state.menu_radio = "🏠 Home"
 if "recs_df" not in st.session_state:
     st.session_state.recs_df = None
 if "last_query_str" not in st.session_state:
     st.session_state.last_query_str = ""
 if "expanded_cards" not in st.session_state:
     st.session_state.expanded_cards = set()
+if "page_size_recs" not in st.session_state:
+    st.session_state.page_size_recs = 9
+if "do_search" not in st.session_state:
+    st.session_state.do_search = False
+
+
+
+if "menu_radio" not in st.session_state:
+    st.session_state.menu_radio = "🏠 Home"
+
+# Apply nav intent before the widget is instantiated
+nav_target = st.session_state.pop("_nav_target", None)
+if nav_target:
+    st.session_state.menu_radio = nav_target
+
 
 # Normalize legacy skipped entries (strings → dicts)
 st.session_state.skipped_books = [
@@ -201,16 +270,9 @@ st.sidebar.markdown(
     unsafe_allow_html=True,
 )
 
-# Display controls in the sidebar (left side)
-st.sidebar.selectbox(
-    "Results per page",
-    [9, 12, 18, 24, 36, 48],
-    index=0,
-    key="page_size_recs",
-    on_change=_reset_pagination,  # reset to page 1 when size changes
-)
 
 MENU = [
+    ("🏠 Home",            "Home"),
     ("🔎 Recommendations", "Recommendations"),
     ("❤️ Favorites", "Favorites"),
     ("🚫 Skipped", "Skipped"),
@@ -218,17 +280,155 @@ MENU = [
 ]
 labels = [lbl for lbl, _ in MENU]
 values = {lbl: val for lbl, val in MENU}
-page_label = st.sidebar.radio("Menu", labels, index=0, label_visibility="collapsed")
+page_label = st.sidebar.radio(
+    "Menu",
+    labels,
+    key="menu_radio",
+    label_visibility="collapsed",
+)
 page = values[page_label]
 
 # Title
 st.markdown(
     '<div class="k-hero">'
     '<h1 class="kidlit-logo">KidLit</h1>'
-    '<p class="kidlit-sub">Kid Literature: Personalized children’s books by age, themes, and tone.</p>'
+    '<p class="kidlit-sub">Kid’s Literature: Personalized children’s books by age, themes, and tone.</p>'
     '</div>',
     unsafe_allow_html=True,
 )
+
+if page == "Home":
+    st.title("👋 Welcome to KidLit")
+    st.markdown("""
+**Find the perfect children’s book** by age, theme, and tone.
+Try a few examples:
+- “book about **friendship** for a **5 year old**”
+- “**whimsical** bedtime story for **3–5**”
+- “**adventurous** chapter book about **magic**”
+    """)
+
+    # Big CTA to jump to Recommendations
+    st.button("Start finding books →", type="primary", on_click=_goto_recs)
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.button("5-year-old • friendship",
+                  on_click=_set_query_and_page,
+                  args=("book about friendship for a 5 year old",))
+    with col2:
+        st.button("3–5 • whimsical • bedtime",
+                  on_click=_set_query_and_page,
+                  args=("whimsical bedtime story for ages 3–5",))
+    with col3:
+        st.button("magic • adventurous • 7",
+                  on_click=_set_query_and_page,
+                  args=("adventurous book about magic for a 7 year old",))
+
+    
+    st.markdown("---")
+    st.subheader("Browse by Theme, Age, and Tone")
+    st.caption("These are just examples — you can search with any themes, tones, or ages.")
+
+    # --- Build frequency tables from your catalog (uses normalized lists you already compute) ---
+    theme_counts = Counter()
+    for lst in CATALOG_DF.get("themes_norm_list", []):
+        for t in (lst or []):
+            theme_counts[_norm(t)] += 1
+
+    tone_counts = Counter()
+    for lst in CATALOG_DF.get("tones_norm_list", []):
+        for t in (lst or []):
+            tone_counts[_norm(t)] += 1
+    
+    # --- Age counts (normalize 3–5 / 3-5 / 5 -> "3-5" or "5") ---
+    def _norm_age_str(s: str) -> str:
+        s = str(s or "").strip().replace("–", "-").replace("—", "-")
+        m = re.match(r"^\s*(\d{1,2})(?:\s*-\s*(\d{1,2}))?\s*$", s)
+        if not m:
+            return ""
+        lo = int(m.group(1))
+        hi = int(m.group(2)) if m.group(2) else lo
+        if lo > hi:
+            lo, hi = hi, lo
+        return f"{lo}-{hi}" if lo != hi else f"{lo}"
+
+    age_counts = Counter()
+    for s in CATALOG_DF.get("age_range", []):
+        a = _norm_age_str(s)
+        if a:
+            age_counts[a] += 1
+
+    # ------- 1) Popular chips (Top N) -------
+    TOP_THEMES = [t for t, _ in theme_counts.most_common(12)]
+    TOP_TONES  = [t for t, _ in tone_counts.most_common(12)]
+    TOP_AGES   = [a for a, _ in age_counts.most_common(9)]
+
+
+    def chip(label: str, query: str, key: str):
+        st.button(label, key=key, on_click=_set_query_and_page, args=(query,), use_container_width=True)
+
+    st.markdown("#### Popular Themes")
+    for i in range(0, len(TOP_THEMES), 6):
+        cols = st.columns(6)
+        for j, t in enumerate(TOP_THEMES[i:i+6]):
+            with cols[j]:
+                chip(t.title(), f"book about {t}", key=f"pop_theme_{i}_{j}")
+
+    st.markdown("#### Popular Tones")
+    for i in range(0, len(TOP_TONES), 6):
+        cols = st.columns(6)
+        for j, t in enumerate(TOP_TONES[i:i+6]):
+            with cols[j]:
+                chip(t.title(), f"{t} children's book", key=f"pop_tone_{i}_{j}")
+    
+
+    st.markdown("#### Age")
+
+    ages = [
+        ("0–2 (baby)",        "books for ages 0-2"),
+        ("1–3 (toddler)",     "books for ages 1-3"),
+        ("3–5 (preschool)",   "books for ages 3-5"),
+        ("5–6 (kindergarten)","books for ages 5-6"),
+        ("6–9 (early reader)","books for ages 6-9"),
+        ("8–12 (middle grade)","books for ages 8-12"),
+        ("12–18 (young adult)","books for young adults"),
+        ]
+
+    for i in range(0, len(ages), 3):
+        cols = st.columns(3)
+        for j, (label, q) in enumerate(ages[i:i+3]):
+            with cols[j]:
+                chip(label, q, key=f"chip_age_curated_{i}_{j}")
+
+
+
+    # -------  Searchable multiselect -------
+    st.markdown("#### Build your own search")
+    colA, colB, colC = st.columns([3, 2, 2])
+
+    with colA:
+        sel_themes = st.multiselect("Themes (type to search)", sorted(theme_counts.keys()), max_selections=3)
+    with colB:
+        sel_tone = st.selectbox("Tone (optional)", [""] + sorted(tone_counts.keys()))
+    with colC:
+        sel_age = st.selectbox(
+            "Age (optional)",
+            [""] + sorted(age_counts.keys(), key=_age_sort_key),
+            format_func=lambda a: ("—" if not a else (f"Ages {a.replace('-', '–')}" if "-" in a else f"Age {a}")),
+        )
+
+    if st.button("Search with selected", key="builder_go"):
+        parts = []
+        if sel_themes:
+            parts.append("book about " + ", ".join(sel_themes))
+        if sel_tone:
+            parts.append(sel_tone)
+        if sel_age:
+            parts.append(f"books for ages {sel_age}" if "-" in sel_age else f"book for a {sel_age} year old")
+        q = " ".join(parts) if parts else "children's book"
+        _set_query_and_page(q)
+
+
 
 if page == "Recommendations":
     st.title("📚 Recommendations")
@@ -248,6 +448,8 @@ if page == "Recommendations":
         with btn_col:
             submitted = st.form_submit_button("🔍 Search", use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
+    # Home page buttons as submit as well
+    submitted = submitted or st.session_state.pop("do_search", False)
 
     if submitted:
         st.session_state.generated = True
@@ -418,8 +620,27 @@ if page == "Recommendations":
             recs_page = recs.iloc[start:end]
 
             # Top-of-results info
-            st.markdown(f"**Total matches:** {total}")
-            st.caption(f"Showing {start+1}–{min(end, total)} of {total}")
+            # Top toolbar: total | showing | per-page selector
+            size_options = [9, 12, 18, 24, 36, 48]
+            current_size = int(st.session_state.get("page_size_recs", 9))
+            idx = size_options.index(current_size) if current_size in size_options else 0
+
+            left, mid, right = st.columns([2, 3, 2], vertical_alignment="center")
+            with left:
+                st.markdown(f"**Total matches:** {total}")
+            with mid:
+                st.caption(f"Showing {start+1}–{min(end, total)} of {total}")
+            with right:
+                st.selectbox(
+                    "Results per page",          # <- visible label now
+                    size_options,
+                    index=idx,
+                    key="page_size_recs",
+                    on_change=_reset_pagination,
+                    help="How many books to show on this page",
+                )
+
+
 
             # Grid
             render_book_grid(recs_page, prefix="rec", show_actions=True, cols=3)
