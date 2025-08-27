@@ -142,12 +142,14 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
         st.markdown('<div class="k-toggle-sentinel" aria-hidden="true"></div>', unsafe_allow_html=True)
         st.markdown('<div class="k-summary-ghost">', unsafe_allow_html=True)
         label = "▲ Close Peek" if opened else "▼ Sneak Peek"
-        if st.button(label, key=f"toggle_{safe}"):
-            if opened:
-                st.session_state.expanded_cards.remove(cid)
-            else:
-                st.session_state.expanded_cards.add(cid)
-            st.rerun()
+        left, center, right = st.columns([1, 2, 1], vertical_alignment="center")
+        with center:
+            if st.button(label, key=f"toggle_{safe}"):
+                if opened:
+                    st.session_state.expanded_cards.remove(cid)
+                else:
+                    st.session_state.expanded_cards.add(cid)
+                st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
         # BODY
