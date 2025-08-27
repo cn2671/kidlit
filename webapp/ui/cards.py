@@ -11,6 +11,7 @@ from webapp.data_io import as_dict, _book_key, _safe_key_fragment
 # ==============================================================================
 # Rendering helpers for cards
 # ==============================================================================
+GR_ICON = "https://cdn.simpleicons.org/goodreads/5A4634"
 
 
 def _pills_html(themes: Iterable[str] | str) -> str:
@@ -90,39 +91,40 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
         k = _book_key(data)
         st.markdown('<div class="k-header-actions">', unsafe_allow_html=True)
 
-        outerL, mid, outerR = st.columns([1, 4, 1])
-        with mid:
-            a1, a2, a3 = st.columns([1, 1, 1], gap="large")
+        if show_actions:
+            outerL, mid, outerR = st.columns([1, 4, 1])
+            with mid:
+                a1, a2, a3 = st.columns([1, 1, 1], gap="large")
 
-            with a1:
-                if st.button("👍 Like", key=f"{safe}_like", use_container_width=True):
-                    if k not in {_book_key(b) for b in st.session_state.liked_books}:
-                        st.session_state.liked_books.append(data)
-                        # st.session_state.read_books = [
-                        #     b for b in st.session_state.read_books if _book_key(b) != k
-                        # ]
-                        st.toast(f"Added to Favorites: {title}", icon="❤️")
+                with a1:
+                    if st.button("👍 Like", key=f"{safe}_like", use_container_width=True):
+                        if k not in {_book_key(b) for b in st.session_state.liked_books}:
+                            st.session_state.liked_books.append(data)
+                            # st.session_state.read_books = [
+                            #     b for b in st.session_state.read_books if _book_key(b) != k
+                            # ]
+                            st.toast(f"Added to Favorites: {title}", icon="❤️")
 
-            with a2:
-                if st.button("👎 Skip", key=f"{safe}_skip", use_container_width=True):
-                    if k not in {_book_key(as_dict(b)) for b in st.session_state.skipped_books}:
-                        st.session_state.skipped_books.append(data)
-                        st.toast(f"Skipped: {title}", icon="🚫")
+                with a2:
+                    if st.button("👎 Skip", key=f"{safe}_skip", use_container_width=True):
+                        if k not in {_book_key(as_dict(b)) for b in st.session_state.skipped_books}:
+                            st.session_state.skipped_books.append(data)
+                            st.toast(f"Skipped: {title}", icon="🚫")
 
-            with a3:
-                if st.button("📖 ✔︎ Read", key=f"{safe}_read", use_container_width=True):
-                    if k not in {_book_key(b) for b in st.session_state.read_books}:
-                        st.session_state.read_books.append(data)
-                        # st.session_state.liked_books = [
-                        #     b for b in st.session_state.liked_books if _book_key(b) != k
-                        # ]
-                        st.toast(f"Marked as Read: {title}", icon="📘")
+                with a3:
+                    if st.button("📖 ✔︎ Read", key=f"{safe}_read", use_container_width=True):
+                        if k not in {_book_key(b) for b in st.session_state.read_books}:
+                            st.session_state.read_books.append(data)
+                            # st.session_state.liked_books = [
+                            #     b for b in st.session_state.liked_books if _book_key(b) != k
+                            # ]
+                            st.toast(f"Marked as Read: {title}", icon="📘")
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        # st.markdown('</div>', unsafe_allow_html=True)
 
         else:
             # Compact per‑page action row
-            st.markdown('<div class="k-header-actions">', unsafe_allow_html=True)
+            # st.markdown('<div class="k-header-actions">', unsafe_allow_html=True)
             if page_mode == "Favorites":
                 if st.button("🗑️ Remove", key=f"{safe}_remove_fav"):
                     st.session_state.liked_books = [
@@ -141,7 +143,7 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
                         b for b in st.session_state.read_books if _book_key(as_dict(b)) != k
                     ]
                     st.rerun()
-            st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         # TOGGLE 
         st.markdown('<div class="k-toggle-sentinel" aria-hidden="true"></div>', unsafe_allow_html=True)
@@ -160,41 +162,41 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
         # BODY
         if opened:
             st.markdown('<div class="k-divider"></div><div class="k-card-body">', unsafe_allow_html=True)
+
             if full_summary:
                 st.markdown(f'<div class="k-summary-full">{full_summary}</div>', unsafe_allow_html=True)
             else:
                 st.markdown('<div class="k-summary-full"><em>No summary available.</em></div>', unsafe_allow_html=True)
 
-
-            # Link buttons
-            GR_ICON = "https://cdn.simpleicons.org/goodreads/5A4634"
-
+            # ---- Centered icon links (Goodreads + Amazon) ----
             title_for_links  = _nz(data.get("title")) or _nz(data.get("ol_title"))
             author_for_links = _nz(data.get("author")) or _nz(data.get("ol_author"))
-            
+
             goodreads_url = (data.get("goodreads_url") or "").strip()
             amazon_url    = (data.get("amazon_url") or "").strip()
-            # Fallback searches if explicit URLs missing
-            # Fallbacks if missing
-            if not goodreads_url and title_for_links:
-                goodreads_url = f"https://www.goodreads.com/search?q={quote_plus(f'{title_for_links} {author_for_links}')}"
+
+            # Fallback Amazon search if no explicit URL
             if not amazon_url and title_for_links:
                 amazon_url = f"https://www.amazon.com/s?k={quote_plus(f'{title_for_links} {author_for_links}')}"
 
-            btns = []
+            btns_html = '<div class="k-linkbar">'
             if goodreads_url:
-                btns.append(
-                    f'<a class="k-iconbtn k-iconbtn--goodreads" href="{hesc(goodreads_url, True)}" '
-                    f'target="_blank" rel="noopener noreferrer" aria-label="Open on Goodreads">'
-                    f'<img src="{GR_ICON}" class="k-ico" alt="Goodreads" loading="lazy" /></a>'
-                )
-            if amazon_url:
-                btns.append(
-                    f'<a class="k-iconbtn k-iconbtn--amazon" href="{hesc(amazon_url, True)}" '
-                    f'target="_blank" rel="noopener noreferrer" aria-label="Open on Amazon">'
-                    f'<i class="fa-brands fa-amazon k-fa" aria-hidden="true"></i>'
+                btns_html += (
+                    f'<a class="k-iconbtn k-iconbtn--goodreads" href="{esc(goodreads_url)}" '
+                    f'target="_blank" rel="noopener noreferrer" aria-label="Open on Goodreads" title="Goodreads">'
+                    f'<img src="{GR_ICON}" class="k-ico" alt="Goodreads" loading="lazy" />'
                     f'</a>'
                 )
+            if amazon_url:
+                btns_html += (
+                    f'<a class="k-iconbtn k-iconbtn--amazon" href="{esc(amazon_url)}" '
+                    f'target="_blank" rel="noopener noreferrer" aria-label="Open on Amazon" title="Amazon">'
+                    f'<i class="fa-brands fa-amazon k-fa"></i>'
+                    f'</a>'
+                )
+            btns_html += '</div>'
 
-            if btns:
-                st.markdown('<div class="k-linkbar">' + "".join(btns) + "</div>", unsafe_allow_html=True)
+            if goodreads_url or amazon_url:
+                st.markdown(btns_html, unsafe_allow_html=True)
+
+            st.markdown('</div>', unsafe_allow_html=True)

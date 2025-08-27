@@ -8,13 +8,18 @@ import streamlit as st
 import math
 import os
 import re
-import sys
+import sys, pathlib
 from collections import Counter
 
 # --- Project imports / path setup -------------------------------------------------
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.insert(0, parent_dir)
+import sys, pathlib
+ROOT = pathlib.Path(__file__).resolve().parents[1]  
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# parent_dir = os.path.dirname(current_dir)
+# sys.path.insert(0, parent_dir)
 
 from scripts.core.parse_query import parse_user_query
 from scripts.core.recommender import parse_age_span, recommend_books
