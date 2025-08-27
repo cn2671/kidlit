@@ -12,25 +12,12 @@ import re
 import unicodedata
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
-import numpy as np
 import pandas as pd
 
-# Project
-from scripts.core.config import get_openai_client
-from scripts.core.retrieval import (
-    ensure_theme_index,
-    ensure_tone_index,
-    map_tone_to_catalog_token,
-    expand_themes,
-)
-# ==============================================================================
-# Configuration / Globals
-# ==============================================================================
 
-_EMB_MODEL = "text-embedding-3-small"
-_client = get_openai_client()
-
-# ---------- Load & normalize base dataframe ----------
+# ==============================================================================
+# Load & normalize base dataframe
+# ==============================================================================
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
 
@@ -49,10 +36,11 @@ for col in [
     if col not in DF.columns:
         DF[col] = ""
 
-# Normalize dash to hyphen in age ranges
 DF["age_range"] = (
     DF["age_range"].astype(str).str.replace("–", "-", regex=False).str.replace("—", "-", regex=False)
 )
+DF["themes_norm"] = DF["themes"].apply(_split_tags) if "themes" in DF.columns else [[] for _ in range(len(DF))]
+DF["tones_norm"]  = DF["tone"].apply(_split_tags)   if "tone"   in DF.columns else [[] for _ in range(len(DF))]
 
 
 # ==============================================================================
@@ -90,135 +78,6 @@ def _split_tags(s: str) -> List[str]:
             out.append(n)
     return out
 
-
-# Precompute normalized tag arrays (safe if columns are missing)
-DF["themes_norm"] = DF["themes"].apply(_split_tags) if "themes" in DF.columns else [[] for _ in range(len(DF))]
-DF["tones_norm"]  = DF["tone"].apply(_split_tags)   if "tone"   in DF.columns else [[] for _ in range(len(DF))]
-
-# ==============================================================================
-# Embedding-based theme expansion (optional)
-# ==============================================================================
-
-# Cache files
-_THEME_VOCAB_PATH = DATA_DIR / "theme_vocab_v1.json"
-_THEME_EMB_PATH   = DATA_DIR / "theme_emb_v1.npz"
-_THEME_TOKEN_EMB_CACHE: dict[str, np.ndarray] = {}  # in-memory per-process cache
-
-
-def _theme_vocab(df: pd.DataFrame) -> List[str]:
-    """All unique normalized theme tokens from DF['themes_norm']."""
-    vocab = set()
-    if "themes_norm" in df.columns:
-        for lst in df["themes_norm"]:
-            for t in (lst or []):
-                tt = _norm_text(t)
-                if tt:
-                    vocab.add(tt)
-    return sorted(vocab)
-
-
-def _embed_texts(texts: Sequence[str]) -> np.ndarray:
-    """Embed a small list of texts; returns (n, d) float32 L2-normalized."""
-    if not texts:
-        # model-dim placeholder; won't be used
-        return np.zeros((0, 1536), dtype=np.float32)
-    resp = _client.embeddings.create(model=_EMB_MODEL, input=list(texts))
-    vecs = np.array([d.embedding for d in resp.data], dtype=np.float32)
-    norms = np.linalg.norm(vecs, axis=1, keepdims=True) + 1e-8
-    return vecs / norms  # cosine-ready
-
-
-def _ensure_theme_index(df: pd.DataFrame) -> Tuple[List[str], np.ndarray]:
-    """Load or build the (vocab, matrix) embedding index for catalog themes."""
-    if _THEME_VOCAB_PATH.exists() and _THEME_EMB_PATH.exists():
-        vocab = json.loads(_THEME_VOCAB_PATH.read_text())
-        mat = np.load(_THEME_EMB_PATH)["embs"].astype(np.float32)
-        return vocab, mat
-
-    vocab = _theme_vocab(df)
-    # batch to stay under token limits
-    embs_list = []
-    B = 256
-    for i in range(0, len(vocab), B):
-        batch = vocab[i : i + B]
-        embs_list.append(_embed_texts(batch))
-    mat = np.vstack(embs_list).astype(np.float32) if embs_list else np.zeros((0, 1), dtype=np.float32)
-
-    # cache
-    _THEME_VOCAB_PATH.write_text(json.dumps(vocab, ensure_ascii=False))
-    np.savez_compressed(_THEME_EMB_PATH, embs=mat)
-    return vocab, mat
-
-
-def rebuild_theme_index(df: Optional[pd.DataFrame] = None) -> None:
-    """Manually refresh the theme index after editing the CSV tags."""
-    base = DF if df is None else df
-    if _THEME_VOCAB_PATH.exists():
-        _THEME_VOCAB_PATH.unlink()
-    if _THEME_EMB_PATH.exists():
-        _THEME_EMB_PATH.unlink()
-    _ = _ensure_theme_index(base)
-
-
-def _expand_themes_llm(
-    themes: Sequence[str],
-    df: pd.DataFrame,
-    top_k: int = 5,
-    min_sim: float = 0.60,
-) -> set[str]:
-    """Return a set of catalog theme tokens expanded via embedding neighbors."""
-    vocab, mat = _ensure_theme_index(df)
-    if mat.shape[0] == 0:  # no vocab available
-        return { _norm_text(t) for t in themes if _norm_text(t) }
-
-    out: set[str] = set()
-    for raw in (themes or []):
-        base = _norm_text(raw)
-        if not base:
-            continue
-        out.add(base)
-
-        # in-process cache for user tokens
-        if base in _THEME_TOKEN_EMB_CACHE:
-            q = _THEME_TOKEN_EMB_CACHE[base]
-        else:
-            q = _embed_texts([base])[0]
-            _THEME_TOKEN_EMB_CACHE[base] = q
-
-        # cosine via dot product on normalized vectors
-        sims = mat @ q  # (N,)
-        # take top_k neighbors
-        if top_k >= len(sims):
-            idxs = np.argsort(sims)[::-1]
-        else:
-            # partial argpartition, then sort those
-            idxs = np.argpartition(sims, -top_k)[-top_k:]
-            idxs = idxs[np.argsort(sims[idxs])[::-1]]
-
-        for i in idxs:
-            if sims[i] >= min_sim:
-                out.add(vocab[i])
-
-    return out
-
-
-# ==============================================================================
-# Synonyms 
-# ==============================================================================
-_THEME_IDX: Tuple[List[str], np.ndarray] | None = None
-_TONE_IDX: Tuple[List[str], np.ndarray] | None = None
-
-def _theme_index():
-    global _THEME_IDX
-    if _THEME_IDX is None:
-        _THEME_IDX = ensure_theme_index(DF)
-    return _THEME_IDX
-
-def _tone_index():
-    global _TONE_IDX
-    if _TONE_IDX is None:
-        _TONE_IDX = ensure_tone_index(DF)
-    return _TONE_IDX
 
 TONE_SYNONYMS: dict[str, list[str]] = {
     "fun": ["playful", "light-hearted", "whimsical", "funny"],
@@ -259,19 +118,6 @@ def _choices_for_tone(tone: str) -> List[str]:
                 add(s)
 
     return choices
-
-
-def _expand_themes(themes: Iterable[str]) -> set[str]:
-    wanted: set[str] = set()
-    for t in (themes or []):
-        base = _norm_text(t)
-        if not base:
-            continue
-        wanted.add(base)
-        for alt in THEME_SYNONYMS.get(base, []):
-            wanted.add(_norm_text(alt))
-    return wanted
-
 
 # ==============================================================================
 # Age parsing helper
@@ -395,33 +241,30 @@ def recommend_books(
     
 
 
-    # -------- Theme OR-match with embedding expansion --------
+    # -------- Theme OR-match (no embeddings) --------
     if themes:
-        # Clean incoming themes
-        raw = [str(t).strip().lower() for t in themes if str(t).strip()]
-        # Expand via embeddings (fallback to raw if no index)
+        # normalize inputs
+        wanted = {_norm_text(t) for t in themes if str(t).strip()}
+        # optional: light manual expansion if you kept THEME_SYNONYMS
         try:
-            vocab, mat = _theme_index()
-            expanded = set(expand_themes(raw, vocab, mat, top_k=5, min_sim=0.60)) if len(vocab) and mat.size else set(raw)
-        except Exception:
-            expanded = set(raw)
+            wanted |= _expand_themes(wanted)
+        except NameError:
+            pass  # if you removed _expand_themes just ignore
 
-        if expanded:
-            work = work[work["themes_norm"].apply(lambda lst: any(w in (lst or []) for w in expanded))]
+        if wanted:
+            work = work[work["themes_norm"].apply(lambda lst: any(w in (lst or []) for w in wanted))]
 
-    # -------- Tone exact match via nearest catalog token --------
+    # -------- Tone exact/synonym match (no embeddings) --------
     if tone:
-        asked = str(tone).strip().lower()
         try:
-            vocab, mat = _tone_index()
-            mapped = map_tone_to_catalog_token(asked, vocab, mat, min_sim=0.60) if len(vocab) and mat.size else asked
-        except Exception:
-            mapped = asked
+            choices = _choices_for_tone(tone)  # e.g., ["calm","gentle","quiet",...]
+        except NameError:
+            # fallback: exact match only
+            choices = [_norm_text(tone)]
 
-        if mapped:
-            narrowed = work[work["tones_norm"].apply(lambda lst: mapped in (lst or []))]
-            if not narrowed.empty:
-                work = narrowed  # only narrow when we have hits
+        narrowed = work[work["tones_norm"].apply(lambda lst: any(c in (lst or []) for c in choices))]
+        if not narrowed.empty:
+            work = narrowed  # only narrow if we actually found tone hits
 
 
     # # -------- Theme OR-match against normalized array --------
@@ -525,5 +368,4 @@ def recommend_books(
 __all__ = [
     "parse_age_span",
     "recommend_books",
-    "rebuild_theme_index",
 ]
