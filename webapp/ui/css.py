@@ -104,19 +104,6 @@ def inject_global_css():
 }
 .k-meta{ color:#6b7280; font-size: 13px; margin-top: 6px; }
 
-/* Center any "toggle" button when the sentinel is present */
-[data-testid="stVerticalBlock"]:has(> .element-container .k-card-sentinel)
-  > .element-container:has(.k-toggle-sentinel) .stButton,
-[data-testid="column"]:has(> .element-container .k-card-sentinel)
-  > .element-container:has(.k-toggle-sentinel) .stButton {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  margin: 8px 0 0 0;
-  padding: 0;
-}
-
 /* Action row (Like/Skip/Read) */
 .k-header-actions{ margin: 10px 16px 0 16px; }
 
