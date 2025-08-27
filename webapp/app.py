@@ -66,8 +66,7 @@ def _goto_recs():
 
 def _set_query_and_page(q):
     st.session_state.user_query = q
-    st.session_state.do_search = True   # your search trigger
-    st.session_state._nav_target = "🔎 Recommendations"
+    st.session_state.do_search = True   
     st.rerun() 
 
 # --- Theme/Tone heuristics -------------------------------------------------------
@@ -228,11 +227,12 @@ if "page_size_recs" not in st.session_state:
     st.session_state.page_size_recs = 9
 if "do_search" not in st.session_state:
     st.session_state.do_search = False
-
-
-
+if "user_query" not in st.session_state:
+    st.session_state.user_query = ""
 if "menu_radio" not in st.session_state:
     st.session_state.menu_radio = "🏠 Home"
+if st.session_state.get("do_search") and st.session_state.get("menu_radio") != "🔎 Recommendations":
+    st.session_state.menu_radio = "🔎 Recommendations"
 
 # Apply nav intent before the widget is instantiated
 nav_target = st.session_state.pop("_nav_target", None)
@@ -440,7 +440,6 @@ if page == "Recommendations":
         with q_col:
             st.text_input(
                 "Describe the book you want…",
-                value=st.session_state.get("user_query", ""),
                 placeholder="e.g., 5-year-old • friendship • adventurous",
                 label_visibility="collapsed",
                 key="user_query",
@@ -452,6 +451,7 @@ if page == "Recommendations":
     submitted = submitted or st.session_state.pop("do_search", False)
 
     if submitted:
+        st.session_state.do_search = False
         st.session_state.generated = True
         st.session_state.expanded_cards = set()  # collapse all on new search
         st.session_state.page_num_recs = 1  # reset page on new search

@@ -8,16 +8,9 @@ from dotenv import load_dotenv
 from pathlib import Path
 from scripts.core.config import get_openai_client
 
-ROOT = Path(__file__).resolve().parents[2]   # project root
+ROOT = Path(__file__).resolve().parents[2]   
 DATA_DIR = ROOT / "data"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-# # Load API key from .env 
-# load_dotenv()
-# api_key = os.getenv("OPENAI_API_KEY")
-# if not api_key:
-#     raise ValueError("OPENAI_API_KEY not found. Please set it in your .env file or environment variables.")
-# client = OpenAI(api_key=api_key) 
 
 # Initialize OpenAI client 
 client = get_openai_client()
@@ -167,7 +160,7 @@ for idx, row in df.iterrows():
 
 # Save output
 if not results:
-    print("❌ No results to process. Check your input data.")
+    print("❌ No results to process. Check input data.")
     exit()
 
 llm_df = pd.DataFrame(results)
