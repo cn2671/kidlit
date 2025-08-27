@@ -161,7 +161,7 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
                 st.markdown('<div class="k-summary-full"><em>No summary available.</em></div>', unsafe_allow_html=True)
 
 
-            # Centered, robust link buttons (with fallbacks)
+            # Link buttons
             GR_ICON = "https://cdn.simpleicons.org/goodreads/5A4634"
 
             title_for_links  = _nz(data.get("title")) or _nz(data.get("ol_title"))
