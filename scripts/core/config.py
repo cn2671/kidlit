@@ -33,4 +33,10 @@ def get_openai_client() -> OpenAI | None:
 
     if not key:
         return None  
+    
+    try:
+        from openai import OpenAI
+    except Exception:
+        return None
+
     return OpenAI(api_key=key)
