@@ -6,6 +6,13 @@ when both tone and themes are empty.
 
 """
 from __future__ import annotations
+from scripts.core.config import get_openai_client
+
+try:
+    client = get_openai_client()
+except Exception:
+    client = None
+
 import json
 import re
 from typing import Any, Dict, List
@@ -19,13 +26,6 @@ from scripts.core.text_utils import (
 
 # Initialize OpenAI client 
 client = get_openai_client()
-
-det = _deterministic_parse(user_input)
-if det["tone"] or det["themes"]:
-    return det
-
-if client is None:
-    return det 
 
 # -----------------------------------------------------------------------------
 # Configs
@@ -90,8 +90,7 @@ def _normalize_theme_token(tok: str) -> str:
 
 
 def _dedup_keep_order(items: List[str]) -> List[str]:
-    seen: set[str] = set()
-    out: List[str] = []
+    seen, out = set(), []
     for x in items:
         if x and x not in seen:
             seen.add(x)
@@ -111,21 +110,17 @@ def _deterministic_parse(user_input: str) -> Dict[str, Any]:
     toks = _tokenize(text)
 
     tone = next((t for t in toks if t in TONE_WHITELIST), "")
-
-    # themes = all tokens except the chosen tone, normalized
     theme_candidates = [t for t in toks if t != tone]
-    themes = _dedup_keep_order([_normalize_theme_token(t) for t in theme_candidates])
-    # prefer at most 4 themes
-    themes = themes[:4]
-
+    themes = _dedup_keep_order([_normalize_theme_token(t) for t in theme_candidates])[:4]
     return {"age_range": age or "", "tone": tone or "", "themes": themes}
 
 
 def _merge_user_first(user_themes: List[str], ai_themes: List[str], cap: int = 4) -> List[str]:
     """Merge themes, preserving user tokens first; normalize, dedup, cap length."""
     user_norm = [_normalize_theme_token(_norm(x)) for x in user_themes if _norm(x)]
-    ai_norm = [_normalize_theme_token(_norm(x)) for x in ai_themes if _norm(x)]
+    ai_norm   = [_normalize_theme_token(_norm(x)) for x in ai_themes   if _norm(x)]
     merged = _dedup_keep_order(user_norm + ai_norm)
+    return merged[:cap]
 
 
 # -----------------------------------------------------------------------------
@@ -154,7 +149,7 @@ def parse_user_query(user_input: str) -> Dict[str, Any]:
         return det  
 
     if client is None:
-    return det
+        return det
 
     # Pass 2: model fallback 
     prompt = textwrap.dedent(f"""\

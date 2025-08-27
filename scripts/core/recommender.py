@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 import numpy as np
 import pandas as pd
-from pathlib import Path
 
 # Project
 from scripts.core.config import get_openai_client

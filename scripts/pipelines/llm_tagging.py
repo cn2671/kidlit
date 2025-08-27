@@ -1,10 +1,7 @@
-import os
 import re
 import json
 import time
 import pandas as pd
-from openai import OpenAI
-from dotenv import load_dotenv
 from pathlib import Path
 from scripts.core.config import get_openai_client
 

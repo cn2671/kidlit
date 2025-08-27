@@ -9,9 +9,7 @@ import math
 import os
 import re
 import sys
-import urllib.parse
 from collections import Counter
-from typing import Any, Dict, Iterable, List, MutableMapping
 
 # --- Project imports / path setup -------------------------------------------------
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +19,6 @@ sys.path.insert(0, parent_dir)
 from scripts.core.parse_query import parse_user_query
 from scripts.core.recommender import parse_age_span, recommend_books
 from scripts.core.text_utils import (
-    BASE_STOPWORDS as STOPWORDS,
     TITLE_STOPWORDS,
     clean_themes as _clean_themes,
     detect_age_from_text,
@@ -29,7 +26,6 @@ from scripts.core.text_utils import (
     tokenize_alpha,
 )
 
-from webapp.ui.grid import render_book_grid 
 from webapp.ui.css import inject_global_css
 from webapp.ui.grid import render_book_grid
 from webapp.data_io import load_catalog, build_index, rehydrate_book, dedupe_books
@@ -40,7 +36,7 @@ from webapp.data_io import _norm, _norm_title, _book_key, as_dict
 # Utilities
 # ==============================================================================
 
-def _as_list(x: Any) -> List[str]:
+def _as_list(x):
     """Coerce a value to a clean list of strings."""
     if x is None:
         return []
@@ -93,7 +89,7 @@ def should_treat_as_tone(word: str) -> bool:
     return tone_count >= max(1, theme_count * 2)
 
 
-def sanitize_parsed(user_text: str, parsed: Dict[str, Any]) -> Dict[str, Any]:
+def sanitize_parsed(user_text, parsed):
     """Post‑process parsed query fields (themes/tone/age) for consistency."""
     out = dict(parsed or {})
     themes = _as_list(out.get("themes", []))
@@ -162,8 +158,6 @@ TONE_CANON = {
 def is_canonical_tone(word: str) -> bool:
     return _norm(word) in TONE_CANON
 
-
-import re  # (you already have this at the top)
 
 def _age_sort_key(token: str) -> tuple[int, int]:
     """
@@ -329,7 +323,7 @@ Try a few examples:
     st.subheader("Browse by Theme, Age, and Tone")
     st.caption("These are just examples — you can search with any themes, tones, or ages.")
 
-    # --- Build frequency tables from your catalog (uses normalized lists you already compute) ---
+    # --- Build frequency tables from catalog  ---
     theme_counts = Counter()
     for lst in CATALOG_DF.get("themes_norm_list", []):
         for t in (lst or []):
@@ -549,7 +543,7 @@ if page == "Recommendations":
         # Kill NaNs and placeholder/empty rows
         recs = recs.fillna("")
 
-        def _empty(s: Any) -> bool:
+        def _empty(s) -> bool:
             return str(s or "").strip().lower() in ("", "nan", "none", "null")
 
         # Drop rows where BOTH title and author are empty
