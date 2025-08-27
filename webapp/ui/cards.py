@@ -89,42 +89,36 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
 
         # ACTIONS
         k = _book_key(data)
-        st.markdown('<div class="k-header-actions">', unsafe_allow_html=True)
+        st.markdown('<div class="k-header-actions k-actions-row">', unsafe_allow_html=True)
+
 
         if show_actions:
-            outerL, mid, outerR = st.columns([1, 4, 1])
-            with mid:
-                a1, a2, a3 = st.columns([1, 1, 1], gap="large")
+        # wide–gap–wide layout 
+            left_pad, c1, c2, c3, right_pad = st.columns(
+                [1, 3, 3, 3, 1],  # <- more room for each button
+                vertical_alignment="center",
+            )
 
-                with a1:
-                    if st.button("👍 Like", key=f"{safe}_like", use_container_width=True):
-                        if k not in {_book_key(b) for b in st.session_state.liked_books}:
-                            st.session_state.liked_books.append(data)
-                            # st.session_state.read_books = [
-                            #     b for b in st.session_state.read_books if _book_key(b) != k
-                            # ]
-                            st.toast(f"Added to Favorites: {title}", icon="❤️")
+            with c1:
+                if st.button("👍 Like", key=f"{safe}_like", use_container_width=True):
+                    if k not in {_book_key(b) for b in st.session_state.liked_books}:
+                        st.session_state.liked_books.append(data)
+                        st.toast(f"Added to Favorites: {title}", icon="❤️")
 
-                with a2:
-                    if st.button("👎 Skip", key=f"{safe}_skip", use_container_width=True):
-                        if k not in {_book_key(as_dict(b)) for b in st.session_state.skipped_books}:
-                            st.session_state.skipped_books.append(data)
-                            st.toast(f"Skipped: {title}", icon="🚫")
+            with c2:
+                if st.button("👎 Skip", key=f"{safe}_skip", use_container_width=True):
+                    if k not in {_book_key(as_dict(b)) for b in st.session_state.skipped_books}:
+                        st.session_state.skipped_books.append(data)
+                        st.toast(f"Skipped: {title}", icon="🚫")
 
-                with a3:
-                    if st.button("📖 ✔︎ Read", key=f"{safe}_read", use_container_width=True):
-                        if k not in {_book_key(b) for b in st.session_state.read_books}:
-                            st.session_state.read_books.append(data)
-                            # st.session_state.liked_books = [
-                            #     b for b in st.session_state.liked_books if _book_key(b) != k
-                            # ]
-                            st.toast(f"Marked as Read: {title}", icon="📘")
-
-        # st.markdown('</div>', unsafe_allow_html=True)
-
+            with c3:
+                # keep label short to avoid wrapping
+                if st.button("📖 Read", key=f"{safe}_read", use_container_width=True):
+                    if k not in {_book_key(b) for b in st.session_state.read_books}:
+                        st.session_state.read_books.append(data)
+                        st.toast(f"Marked as Read: {title}", icon="📘")
         else:
-            # Compact per‑page action row
-            # st.markdown('<div class="k-header-actions">', unsafe_allow_html=True)
+            # Compact per-page action row (Favorites/Skipped/Read)
             if page_mode == "Favorites":
                 if st.button("🗑️ Remove", key=f"{safe}_remove_fav"):
                     st.session_state.liked_books = [
@@ -143,6 +137,8 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
                         b for b in st.session_state.read_books if _book_key(as_dict(b)) != k
                     ]
                     st.rerun()
+
+        # 🔚 CLOSE the wrapper once, outside the if/else
         st.markdown('</div>', unsafe_allow_html=True)
 
         # TOGGLE 

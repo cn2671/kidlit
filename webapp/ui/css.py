@@ -105,8 +105,33 @@ def inject_global_css():
 .k-meta{ color:#6b7280; font-size: 13px; margin-top: 6px; }
 
 /* Action row (Like/Skip/Read) */
-.k-header-actions{ margin: 10px 16px 0 16px; }
+.k-header-actions{
+  margin: 10px 16px 0 16px;
+}
+.k-header-actions .stButton > button{
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  writing-mode: horizontal-tb !important;  /* hard stop for any accidental vertical writing */
+  min-width: 120px;                         /* give the label room */
+  text-align: center;
+  padding: 8px 14px;                        
+}
+.k-actions-row .stButton > button{
+  white-space: nowrap;         /* keep “Read” on one line */
+  min-width: 140px;            /* avoid skinny buttons that force wrapping */
+  height: 46px;
+  padding: 8px 16px;
+  font-weight: 600;
+}
 
+/* a little extra spread between the three buttons */
+.k-actions-row [data-testid="column"] { padding-left: 6px; padding-right: 6px; }
+
+/* mobile: allow a bit smaller min width so they still fit */
+@media (max-width: 640px){
+  .k-actions-row .stButton > button{ min-width: 120px; }
+}
 /* Body & divider */
 .k-card-body{ padding: 16px 24px 28px; overflow: visible; }
 .k-divider{ height:1px; background:#e5e7eb; margin: 0 16px; }
