@@ -201,6 +201,16 @@ def _age_sort_key(token: str) -> tuple[int, int]:
     # Push unknowns to the end
     return (999, 999)
 
+def _tones_list(s: str) -> list[str]:
+    s = str(s or "")
+    if s.strip().startswith("[") and s.strip().endswith("]"):
+        try:
+            arr = json.loads(s)
+            return [str(x).strip().lower() for x in arr if isinstance(x, str)]
+        except Exception:
+            pass
+    # comma/semicolon/pipe/slash fallback
+    return [t.strip().lower() for t in re.split(r"[;,/|]+", s) if t.strip()]
 
 # ==============================================================================
 # Page Config & Session State
@@ -563,6 +573,53 @@ if page == "Recommendations":
 
         recs["kidlit_key"] = recs.apply(lambda r: _book_key(as_dict(r)), axis=1)
         recs = recs.drop_duplicates(subset=["kidlit_key"]).drop(columns=["kidlit_key"])
+
+       # --- LLM tone compatibility (Filter + Fallback) ---
+        tone_raw = (parsed.get("tone") or "").strip().lower()
+
+        if tone_raw:
+            recs["tones_norm_list"] = recs["tone"].apply(_tones_list)
+            strict = recs[recs["tones_norm_list"].apply(lambda lst: tone_raw in (lst or []))]
+
+            # If already have enough exact matches, use them and skip GPT
+            MIN_STRICT = 6
+            if len(strict) >= MIN_STRICT:
+                recs = strict
+            else:
+                # Try GPT soft-match; if scoring fails, fall back to strict (even if small)
+                try:
+                    from scripts.core.llm_filters import score_rows_by_tone
+
+                    MAX_TO_SCORE = 150
+                    HARD_TH      = 3   # 4=perfect, 3=good
+                    SOFT_TH      = 2   # 2=okay
+                    MIN_KEEP     = 6
+
+                    scored = score_rows_by_tone(recs.head(MAX_TO_SCORE).copy(), tone_raw, tone_col="tone")
+
+                    hard = scored[scored["__tone_score"] >= HARD_TH]
+                    soft = scored[scored["__tone_score"] >= SOFT_TH]
+
+                    # always include any strict matches found
+                    def _dedup_keep(df):
+                        df = df.copy()
+                        df["kidlit_key"] = df.apply(lambda r: _book_key(as_dict(r)), axis=1)
+                        return df.drop_duplicates(subset=["kidlit_key"]).drop(columns=["kidlit_key"])
+
+                    if len(hard) >= MIN_KEEP:
+                        recs = _dedup_keep(pd.concat([strict, hard], ignore_index=True))
+                        st.caption("Not many exact tone matches; including close tone matches.")
+                    elif len(soft) >= min(3, MIN_KEEP):
+                        recs = _dedup_keep(pd.concat([strict, soft], ignore_index=True))
+                        st.caption("Limited exact matches; showing the nearest tone matches.")
+                    else:
+                        # Scoring produced nothing useful—show strict (even if small)
+                        recs = strict if not strict.empty else recs
+                        if strict.empty:
+                            st.caption("No tone matches found; showing age/theme matches only.")
+                except Exception:
+                    # GPT not available / error: just use strict results
+                    recs = strict if not strict.empty else recs
 
         if (
             age_range

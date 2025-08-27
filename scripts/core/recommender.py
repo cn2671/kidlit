@@ -17,7 +17,12 @@ import pandas as pd
 
 # Project
 from scripts.core.config import get_openai_client
-
+from scripts.core.retrieval import (
+    ensure_theme_index,
+    ensure_tone_index,
+    map_tone_to_catalog_token,
+    expand_themes,
+)
 # ==============================================================================
 # Configuration / Globals
 # ==============================================================================
@@ -87,16 +92,8 @@ def _split_tags(s: str) -> List[str]:
 
 
 # Precompute normalized tag arrays (safe if columns are missing)
-if "themes" in DF.columns:
-    DF["themes_norm"] = DF["themes"].apply(_split_tags)
-else:
-    DF["themes_norm"] = [[] for _ in range(len(DF))]
-
-if "tone" in DF.columns:
-    DF["tones_norm"] = DF["tone"].apply(_split_tags)
-else:
-    DF["tones_norm"] = [[] for _ in range(len(DF))]
-
+DF["themes_norm"] = DF["themes"].apply(_split_tags) if "themes" in DF.columns else [[] for _ in range(len(DF))]
+DF["tones_norm"]  = DF["tone"].apply(_split_tags)   if "tone"   in DF.columns else [[] for _ in range(len(DF))]
 
 # ==============================================================================
 # Embedding-based theme expansion (optional)
@@ -208,6 +205,20 @@ def _expand_themes_llm(
 # ==============================================================================
 # Synonyms 
 # ==============================================================================
+_THEME_IDX: Tuple[List[str], np.ndarray] | None = None
+_TONE_IDX: Tuple[List[str], np.ndarray] | None = None
+
+def _theme_index():
+    global _THEME_IDX
+    if _THEME_IDX is None:
+        _THEME_IDX = ensure_theme_index(DF)
+    return _THEME_IDX
+
+def _tone_index():
+    global _TONE_IDX
+    if _TONE_IDX is None:
+        _TONE_IDX = ensure_tone_index(DF)
+    return _TONE_IDX
 
 TONE_SYNONYMS: dict[str, list[str]] = {
     "fun": ["playful", "light-hearted", "whimsical", "funny"],
@@ -381,68 +392,99 @@ def recommend_books(
             else:
                 # last-resort: substring for unusual inputs
                 work = work[work["age_range"].str.contains(re.escape(age_filter), na=False, case=False)]
+    
 
-    # -------- Theme OR-match against normalized array --------
+
+    # -------- Theme OR-match with embedding expansion --------
     if themes:
-        wanted = [_norm_text(t) for t in themes if t]
-        unwanted = {
-            "book",
-            "books",
-            "about",
-            "for",
-            "the",
-            "and",
-            "or",
-            "with",
-            "on",
-            "like",
-            "kids",
-            "kid",
-            "child",
-            "children",
-            "of",
-            "to",
-            "please",
-            "show",
-            "find",
-            "i",
-            "im",
-            "i'm",
-            "want",
-            "looking",
-            "that",
-            "this",
-            "is",
-            "are",
-            "need",
-            "some",
-            "something",
-            "recommend",
-            "recommendation",
-            "recommendations",
-            "year",
-            "years",
-            "yr",
-            "yo",
-            "old",
-        }
-        wanted = [w for w in wanted if len(w) >= 3 and w not in unwanted]
-
-        # Expand by chosen method; fall back to raw tokens if helper missing
+        # Clean incoming themes
+        raw = [str(t).strip().lower() for t in themes if str(t).strip()]
+        # Expand via embeddings (fallback to raw if no index)
         try:
-            ws = _expand_themes(wanted)  # manual synonyms
-        except NameError:
-            ws = set(wanted)
+            vocab, mat = _theme_index()
+            expanded = set(expand_themes(raw, vocab, mat, top_k=5, min_sim=0.60)) if len(vocab) and mat.size else set(raw)
+        except Exception:
+            expanded = set(raw)
 
-        if ws:
-            work = work[work["themes_norm"].apply(lambda lst: any(w in (lst or []) for w in ws))]
+        if expanded:
+            work = work[work["themes_norm"].apply(lambda lst: any(w in (lst or []) for w in expanded))]
 
-    # -------- Tone exact/synonym match --------
+    # -------- Tone exact match via nearest catalog token --------
     if tone:
-        choices = _choices_for_tone(tone)
-        narrowed = work[work["tones_norm"].apply(lambda lst: any(c in (lst or []) for c in choices))]
-        if not narrowed.empty:
-            work = narrowed  # only narrow if actually found tone hits
+        asked = str(tone).strip().lower()
+        try:
+            vocab, mat = _tone_index()
+            mapped = map_tone_to_catalog_token(asked, vocab, mat, min_sim=0.60) if len(vocab) and mat.size else asked
+        except Exception:
+            mapped = asked
+
+        if mapped:
+            narrowed = work[work["tones_norm"].apply(lambda lst: mapped in (lst or []))]
+            if not narrowed.empty:
+                work = narrowed  # only narrow when we have hits
+
+
+    # # -------- Theme OR-match against normalized array --------
+    # if themes:
+    #     wanted = [_norm_text(t) for t in themes if t]
+    #     unwanted = {
+    #         "book",
+    #         "books",
+    #         "about",
+    #         "for",
+    #         "the",
+    #         "and",
+    #         "or",
+    #         "with",
+    #         "on",
+    #         "like",
+    #         "kids",
+    #         "kid",
+    #         "child",
+    #         "children",
+    #         "of",
+    #         "to",
+    #         "please",
+    #         "show",
+    #         "find",
+    #         "i",
+    #         "im",
+    #         "i'm",
+    #         "want",
+    #         "looking",
+    #         "that",
+    #         "this",
+    #         "is",
+    #         "are",
+    #         "need",
+    #         "some",
+    #         "something",
+    #         "recommend",
+    #         "recommendation",
+    #         "recommendations",
+    #         "year",
+    #         "years",
+    #         "yr",
+    #         "yo",
+    #         "old",
+    #     }
+    #     wanted = [w for w in wanted if len(w) >= 3 and w not in unwanted]
+
+    #     # Expand by chosen method; fall back to raw tokens if helper missing
+    #     try:
+    #         ws = _expand_themes(wanted)  # manual synonyms
+    #     except NameError:
+    #         ws = set(wanted)
+
+    #     if ws:
+    #         work = work[work["themes_norm"].apply(lambda lst: any(w in (lst or []) for w in ws))]
+
+    # # -------- Tone exact/synonym match --------
+    # if tone:
+    #     choices = _choices_for_tone(tone)
+    #     narrowed = work[work["tones_norm"].apply(lambda lst: any(c in (lst or []) for c in choices))]
+    #     if not narrowed.empty:
+    #         work = narrowed  # only narrow if actually found tone hits
 
     # -------- Empty -> return empty with schema --------
     if work.empty:
