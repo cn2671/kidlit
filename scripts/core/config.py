@@ -19,21 +19,26 @@ def get_openai_client():
     Return an OpenAI client if both a key and the 'openai' package are available.
     Otherwise return None so the app can still run in deterministic mode.
     """
-    key = None
-    if st is not None:
-        try:
-            key = st.secrets.get("OPENAI_API_KEY", None)
-        except Exception:
-            pass
-    key = key or os.getenv("OPENAI_API_KEY")
+    key = os.getenv("OPENAI_API_KEY")
+
+    # Try Streamlit secrets if available
+    try:
+        import streamlit as st
+        key = st.secrets.get("OPENAI_API_KEY", key)
+    except Exception:
+        st = None  # streamlit not available (e.g., during CLI pipelines)
+
+    # If no key, return None (app can still run in deterministic mode)
     if not key:
+        if st:
+            st.info("OPENAI_API_KEY not set; running without LLM features.")
         return None
 
-    # Lazy import so missing package doesn't crash startup
+    # Try to import the package
     try:
         from openai import OpenAI
     except Exception:
-        if st is not None:
+        if st:
             st.warning("OpenAI package not installed; running without LLM features.")
         return None
 

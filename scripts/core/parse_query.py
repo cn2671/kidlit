@@ -8,11 +8,6 @@ when both tone and themes are empty.
 from __future__ import annotations
 from scripts.core.config import get_openai_client
 
-try:
-    client = get_openai_client()
-except Exception:
-    client = None
-
 import json
 import re
 from typing import Any, Dict, List
@@ -25,7 +20,10 @@ from scripts.core.text_utils import (
 )
 
 # Initialize OpenAI client 
-client = get_openai_client()
+try:
+    client = get_openai_client()
+except Exception:
+    client = None
 
 # -----------------------------------------------------------------------------
 # Configs
