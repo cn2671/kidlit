@@ -20,6 +20,13 @@ from scripts.core.text_utils import (
 # Initialize OpenAI client 
 client = get_openai_client()
 
+det = _deterministic_parse(user_input)
+if det["tone"] or det["themes"]:
+    return det
+
+if client is None:
+    return det 
+
 # -----------------------------------------------------------------------------
 # Configs
 # -----------------------------------------------------------------------------
@@ -145,6 +152,9 @@ def parse_user_query(user_input: str) -> Dict[str, Any]:
     det = _deterministic_parse(user_input)
     if det["tone"] or det["themes"]:
         return det  
+
+    if client is None:
+    return det
 
     # Pass 2: model fallback 
     prompt = textwrap.dedent(f"""\

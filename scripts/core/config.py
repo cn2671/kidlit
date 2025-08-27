@@ -1,5 +1,4 @@
 import os
-from openai import OpenAI
 
 
 try:
@@ -15,28 +14,27 @@ except Exception:
     pass
 
 
-def get_openai_client() -> OpenAI | None:
+def get_openai_client():
     """
-    Return an OpenAI client if a key is available, otherwise None.
-    This must NOT raise so the app can still boot without an API key.
+    Return an OpenAI client if both a key and the 'openai' package are available.
+    Otherwise return None so the app can still run in deterministic mode.
     """
     key = None
-
     if st is not None:
         try:
             key = st.secrets.get("OPENAI_API_KEY", None)
         except Exception:
-            key = None
-
-    # Fallback to environment variable (local dev)
+            pass
     key = key or os.getenv("OPENAI_API_KEY")
-
     if not key:
-        return None  
-    
+        return None
+
+    # Lazy import so missing package doesn't crash startup
     try:
         from openai import OpenAI
     except Exception:
+        if st is not None:
+            st.warning("OpenAI package not installed; running without LLM features.")
         return None
 
     return OpenAI(api_key=key)
