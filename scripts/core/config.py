@@ -1,10 +1,36 @@
 import os
-from dotenv import load_dotenv
 from openai import OpenAI
 
-load_dotenv()
-def get_openai_client() -> OpenAI:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not set.")
-    return OpenAI(api_key=api_key)
+
+try:
+    import streamlit as st
+except Exception:
+    st = None
+
+
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
+
+def get_openai_client() -> OpenAI | None:
+    """
+    Return an OpenAI client if a key is available, otherwise None.
+    This must NOT raise so the app can still boot without an API key.
+    """
+    key = None
+
+    if st is not None:
+        try:
+            key = st.secrets.get("OPENAI_API_KEY", None)
+        except Exception:
+            key = None
+
+    # Fallback to environment variable (local dev)
+    key = key or os.getenv("OPENAI_API_KEY")
+
+    if not key:
+        return None  
+    return OpenAI(api_key=key)
