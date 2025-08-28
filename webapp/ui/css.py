@@ -139,8 +139,32 @@ def inject_global_css():
 .k-actions-row [data-testid="column"] { padding-left: 6px; padding-right: 6px; }
 
 /* mobile: allow a bit smaller min width so they still fit */
-@media (max-width: 640px){
-  .k-actions-row .stButton > button{ min-width: 120px; }
+/* iPad / tablet landscape */
+@media (max-width: 1024px){
+  /* make the sidebar a bit slimmer when open */
+  [data-testid="stSidebar"]{
+    min-width: 220px !important;
+    width: 220px !important;
+  }
+  .k-cover{ width: 78px; height: 108px; }
+  .k-header-title{
+    font-size: 0.98rem;
+    -webkit-line-clamp: 2;           /* keep to two lines */
+  }
+}
+
+/* iPad portrait / smaller tablets */
+@media (max-width: 820px){
+  [data-testid="stSidebar"]{
+    min-width: 200px !important;
+    width: 200px !important;
+  }
+  .k-cover{ width: 70px; height: 100px; }
+  .k-header-row{ display:flex; gap:12px; align-items:flex-start; }
+  .k-header-title{
+    font-size: 0.94rem;
+    -webkit-line-clamp: 3;           /* allow 3 lines on narrower screens */
+  }
 }
 /* Body & divider */
 .k-card-body{ padding: 16px 24px 28px; overflow: visible; }
@@ -149,7 +173,7 @@ def inject_global_css():
 /* Summary spacing + side padding */
 .k-summary-full{
   display: block;
-  overflow: visible;
+  overflow: visible;  
   margin: 16px 0 20px 0;
   padding: 0 12px;
   line-height: 1.5;
@@ -163,7 +187,7 @@ def inject_global_css():
   border-radius: 10px !important; padding: 6px 12px !important; font-weight: 600 !important;
 }
 .stButton>button:hover{ filter: brightness(0.98); }
-
+  
 .stButton > button {
   margin-left: auto;
   margin-right: auto;
