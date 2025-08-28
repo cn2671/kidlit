@@ -66,25 +66,31 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
         # Card sentinel for scoped hover styles
         st.markdown('<div class="k-card-sentinel" aria-hidden="true"></div>', unsafe_allow_html=True)
 
+        title_html = f'''
+        <a href="{esc(amazon_url)}" target="_blank" rel="noopener noreferrer" class="book-link">
+            {esc(title)}
+        </a>
+        '''
+
         # HEADER
         header_html = f"""
-<div id="hdr-{safe}" class="k-card-header" role="group" aria-label="{esc(title)} by {esc(author)}">
-  <div class="k-header-scroll">
-    <div class="k-header-row">
-      <div>
-        {('<img src="%s" alt="Cover" class="k-cover" width="90" height="120" />' % cover)
-          if cover else '<div class="k-cover" style="width:90px;height:120px;background:#f3f4f6;"></div>'}
-      </div>
-      <div style="flex:1;">
-        <h3 class="k-header-title" title="{esc(title)}">{title_html}</h3>
-        <div><span class="k-header-meta"><em>by {author}</em></span></div>
-        <div style="margin:4px 0 6px 0;">{pills_html}</div>
-        <div class="k-meta" title="Tone: {esc(tone)} • Ages {esc(age)}">🎭 {tone} &nbsp; • &nbsp; 📅 Ages {age}</div>
-      </div>
-    </div>
-  </div>
-</div>
-"""
+        <div id="hdr-{safe}" class="k-card-header" role="group" aria-label="{esc(title)} by {esc(author)}">
+        <div class="k-header-scroll">
+            <div class="k-header-row">
+            <div>
+                {('<img src="%s" alt="Cover" class="k-cover" width="90" height="120" />' % cover)
+                if cover else '<div class="k-cover" style="width:90px;height:120px;background:#f3f4f6;"></div>'}
+            </div>
+            <div style="flex:1;">
+                <h3 class="k-header-title" title="{esc(title)}">{title_html}</h3>
+                <div><span class="k-header-meta"><em>by {author}</em></span></div>
+                <div style="margin:4px 0 6px 0;">{pills_html}</div>
+                <div class="k-meta" title="Tone: {esc(tone)} • Ages {esc(age)}">🎭 {tone} &nbsp; • &nbsp; 📅 Ages {age}</div>
+            </div>
+            </div>
+        </div>
+        </div>
+        """
         st.markdown(header_html, unsafe_allow_html=True)
 
         # ACTIONS

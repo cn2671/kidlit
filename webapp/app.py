@@ -216,7 +216,7 @@ def _tones_list(s: str) -> list[str]:
 # Page Config & Session State
 # ==============================================================================
 
-st.set_page_config(page_title="KidLit", page_icon="📚", layout="wide")
+st.set_page_config(page_title="KidLit Curator", page_icon="📚", layout="wide")
 inject_global_css()
 
 for key in ["user_query", "generated", "liked_books", "skipped_books", "read_books"]:
@@ -301,7 +301,7 @@ page = values[page_label]
 # Title
 st.markdown(
     '<div class="k-hero">'
-    '<h1 class="kidlit-logo">KidLit</h1>'
+    '<h1 class="kidlit-logo">KidLit Curator</h1>'
     '<p class="kidlit-sub">Kid’s Literature: Personalized children’s books by age, themes, and tone.</p>'
     '</div>',
     unsafe_allow_html=True,
