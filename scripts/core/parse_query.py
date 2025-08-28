@@ -6,8 +6,6 @@ when both tone and themes are empty.
 
 """
 from __future__ import annotations
-from scripts.core.config import get_openai_client
-
 import json
 import re
 from typing import Any, Dict, List
