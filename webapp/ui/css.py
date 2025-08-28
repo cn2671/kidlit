@@ -92,9 +92,10 @@ def inject_global_css():
   display:block;                /* no -webkit-box */
   overflow:visible;             /* show all lines */
   white-space:normal;           /* allow wrap */
-  word-break:break-word;
-  overflow-wrap:anywhere;
-  hyphens:auto;
+  word-break:normal;
+  overflow-wrap:normal;
+  hyphens:none;
+  text-wrap: balance; 
 }
 .k-header-meta{ margin:0 6px 6px 0; color:#4b5563; display:inline-block; }
 .k-pill{
@@ -126,6 +127,74 @@ def inject_global_css():
 .stButton>button{ border-radius:10px !important; padding:6px 12px !important; font-weight:600 !important; }
 .stButton>button:hover{ filter:brightness(0.98); }
 .stButton > button{ margin-left:auto; margin-right:auto; display:block; }
+
+/* --- Action buttons: stay one line, adapt on small screens --- */
+.k-actions-row .stButton > button{
+  /* never break the word into vertical letters */
+  white-space: nowrap !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+
+  /* allow the label to scale a bit with viewport */
+  font-size: clamp(13px, 1.6vw, 16px);
+
+  /* give some room but not so large it forces wrapping */
+  min-width: 120px;
+  max-width: 100%;
+
+  /* if it STILL can’t fit, show an ellipsis instead of wrapping */
+  text-overflow: ellipsis;
+  overflow: hidden;
+
+  /* comfy defaults you already had */
+  height: 46px;
+  padding: 8px 16px;
+  font-weight: 600;
+}
+
+/* iPad landscape / medium widths */
+@media (max-width: 1024px){
+  .k-actions-row .stButton > button{
+    font-size: clamp(12px, 1.8vw, 15px);
+    min-width: 108px;
+    padding: 8px 12px;
+  }
+}
+
+/* iPad portrait / narrow columns */
+@media (max-width: 820px){
+  .k-actions-row .stButton > button{
+    font-size: clamp(12px, 2.0vw, 14px);
+    min-width: 96px;
+    padding: 7px 10px;
+  }
+  /* tighten column gutters so buttons get a little more width */
+  .k-actions-row [data-testid="column"]{ padding-left:4px; padding-right:4px; }
+}
+
+/* Narrow phones/tablets: switch to emoji-only */
+@media (max-width: 560px){
+  .k-actions-row .stButton > button{
+    /* make the button a compact square-ish icon */
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    padding: 0 0;              /* center the emoji nicely */
+    text-align: center;
+
+    /* show the first glyph (emoji), clip the rest (text) */
+    overflow: hidden;
+
+    /* bump emoji size a bit for tap target clarity */
+    font-size: 20px;
+    line-height: 44px;         /* vertically center the emoji */
+  }
+
+  /* tighten gutters so three icons fit comfortably */
+  .k-actions-row [data-testid="column"]{
+    padding-left: 4px; padding-right: 4px;
+  }
+}
 
 /* Hero */
 .k-hero{
@@ -165,6 +234,7 @@ html{ color-scheme:light !important; }
   [data-testid="stVerticalBlock"]:has(> .element-container .k-card-sentinel):hover,
   [data-testid="column"]:has(> .element-container .k-card-sentinel):hover{ transform:none; }
 }
+
 
 /* ===== Sidebar (segmented) ===== */
 section[data-testid="stSidebar"] .stRadio > div[role="radiogroup"]{
@@ -267,6 +337,21 @@ section[data-testid="stSidebar"] .stRadio [role="radiogroup"] > label[data-basew
 .k-iconbtn:hover{ box-shadow:0 2px 6px rgba(0,0,0,.10); transform:translateY(-1px); }
 .k-iconbtn:focus-visible{ outline:2px solid #6366f1; outline-offset:2px; border-color:#6366f1; }
 .k-ico{ width:20px; height:20px; display:block; }
+
+/* Book-card buttons: keep words intact and on one line */
+.k-header-actions .stButton > button,
+.k-actions-row .stButton > button,
+.k-summary-ghost .stButton > button,
+.k-summary-btn .stButton > button {
+  white-space: nowrap !important;   /* never wrap within the label */
+  word-break: keep-all !important;  /* don't break words */
+  overflow-wrap: normal !important; /* no char-level breaks */
+  hyphens: none !important;         /* no auto-hyphenation */
+  min-width: 140px;                 /* room for “📖 Read” etc. */
+  height: 46px;                     /* keep consistent height */
+  text-overflow: ellipsis;          /* (optional) trim if ever too narrow */
+  overflow: hidden;                 /* pairs with ellipsis */
+}
 
 /* ---------- Responsive tweaks (no line clamp reintroduced) ---------- */
 @media (max-width: 1024px){

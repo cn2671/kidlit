@@ -106,20 +106,20 @@ def render_book_card(row: Any, key_prefix: str, show_actions: bool = True, page_
             )
 
             with c1:
-                if st.button("👍 Like", key=f"{safe}_like", use_container_width=True):
+                if st.button("👍 Like", key=f"{safe}_like", use_container_width=True, help="Like"):
                     if k not in {_book_key(b) for b in st.session_state.liked_books}:
                         st.session_state.liked_books.append(data)
                         st.toast(f"Added to Favorites: {title}", icon="❤️")
 
             with c2:
-                if st.button("👎 Skip", key=f"{safe}_skip", use_container_width=True):
+                if st.button("👎 Skip", key=f"{safe}_skip", use_container_width=True, help="Skip"):
                     if k not in {_book_key(as_dict(b)) for b in st.session_state.skipped_books}:
                         st.session_state.skipped_books.append(data)
                         st.toast(f"Skipped: {title}", icon="🚫")
 
             with c3:
                 # keep label short to avoid wrapping
-                if st.button("📖 Read", key=f"{safe}_read", use_container_width=True):
+                if st.button("📖 Read", key=f"{safe}_read", use_container_width=True, help="Read"):
                     if k not in {_book_key(b) for b in st.session_state.read_books}:
                         st.session_state.read_books.append(data)
                         st.toast(f"Marked as Read: {title}", icon="📘")
