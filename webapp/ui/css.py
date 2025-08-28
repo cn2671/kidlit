@@ -97,6 +97,16 @@ def inject_global_css():
 .k-header-row{ display:flex; gap:12px; align-items:flex-start; }
 .k-cover{ border-radius: 10px; object-fit: cover; }
 .k-header-title{ margin:0 0 4px; font-size:1.05rem; }
+.k-header-title{
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;              /* 2 lines by default */
+  -webkit-box-orient: vertical;
+  line-height: 1.2;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
 .k-header-meta{ margin:0 6px 6px 0; color:#4b5563; display:inline-block; }
 .k-pill{
   display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px;

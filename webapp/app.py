@@ -67,8 +67,8 @@ def _goto_recs():
 
 def _set_query_and_page(q):
     st.session_state.user_query = q
-    st.session_state.do_search = True   
-    st.rerun() 
+    st.session_state.do_search = True 
+    st.session_state.menu_radio = "🔎 Recommendations"    
 
 # --- Theme/Tone heuristics -------------------------------------------------------
 
@@ -292,6 +292,7 @@ values = {lbl: val for lbl, val in MENU}
 page_label = st.sidebar.radio(
     "Menu",
     labels,
+    index=labels.index(st.session_state.get("menu_radio", "🏠 Home")),
     key="menu_radio",
     label_visibility="collapsed",
 )
