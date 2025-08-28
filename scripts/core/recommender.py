@@ -13,11 +13,7 @@ import unicodedata
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 import pandas as pd
-from scripts.core.text_utils import _norm_text, split_tags
-try:
-    from scripts.core.text_utils import norm_tag
-except ImportError:
-    from scripts.core.text_utils import norm as norm_tag
+from scripts.core.text_utils import split_tags 
 
 
 # ==============================================================================
