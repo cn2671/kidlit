@@ -4,6 +4,7 @@ import pandas as pd
 from typing import Any, Dict, List
 from pathlib import Path
 import streamlit as st
+from scripts.core.text_utils import split_tags
 
 # ==============================================================================
 # Utilities
@@ -82,59 +83,34 @@ def dedupe_books(lst):
             out.append(b)
     return out
 
-
+@st.cache_data
 def load_catalog(path: str = "books_llm_tags.csv") -> pd.DataFrame:
     """Load the book catalog and compute normalized helper columns.
 
     The path is aligned with the recommender module.
     """
-    from streamlit import cache_data
-    def _load(p: str | Path):
-        df = pd.read_csv(p).fillna("")
-        for col in ["title", "ol_title", "author", "ol_author", "themes", "tone"]:
-            if col not in df.columns:
-                df[col] = ""
-        df["title_norm"] = df["title"].apply(_norm_title)
-        df["ol_title_norm"] = df["ol_title"].apply(_norm_title)
-        df["author_norm"] = df["author"].apply(_norm)
-        df["ol_author_norm"] = df["ol_author"].apply(_norm)
+    df = pd.read_csv(path).fillna("")
+    for col in ["title", "ol_title", "author", "ol_author", "themes", "tone"]:
+        if col not in df.columns:
+            df[col] = ""
+    df["title_norm"]   = df["title"].apply(_norm_title)
+    df["ol_title_norm"]= df["ol_title"].apply(_norm_title)
+    df["author_norm"]  = df["author"].apply(_norm)
+    df["ol_author_norm"]=df["ol_author"].apply(_norm)
 
-        # Normalized tag arrays
-        df["themes_norm_list"] = df["themes"].apply(_split_tags)
-        df["tones_norm_list"] = df["tone"].apply(_split_tags)
-        return df
-    return _load(path)
+    # Normalized tag arrays (use the shared function)
+    df["themes_norm_list"] = df["themes"].apply(split_tags)
+    df["tones_norm_list"]  = df["tone"].apply(split_tags)
+
+    # Keep legacy names some code expects
+    df["themes_norm"] = df["themes_norm_list"]
+    df["tones_norm"]  = df["tones_norm_list"]
+    return df
 
 def _safe_key_fragment(s: str) -> str:
     """Return a filesystem/HTML‑id friendly fragment."""
     import re
     return re.sub(r"[^a-z0-9_-]+", "_", _norm(s))[:60]
-
-    
-def _split_tags(s: str) -> List[str]:
-    """Split a tag field into a normalized, de‑duplicated list of strings."""
-    s = str(s or "")
-
-    # If tags are stored like ["magic","friendship"], parse JSON.
-    if s.strip().startswith("[") and s.strip().endswith("]"):
-        try:
-            import json
-            arr = json.loads(s)
-            return [_norm(x) for x in arr if isinstance(x, str) and _norm(x)]
-        except Exception:
-            pass
-
-    # Otherwise split on commas / semicolons / slashes 
-    parts = re.split(r"[;,/|]+", s)
-    parts = [_norm(p) for p in parts if _norm(p)]
-
-    # De‑dupe preserving order
-    seen, out = set(), []
-    for p in parts:
-        if p not in seen:
-            seen.add(p)
-            out.append(p)
-    return out
 
 
 def build_index(df: pd.DataFrame) -> dict[str, dict]:

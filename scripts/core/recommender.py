@@ -13,6 +13,7 @@ import unicodedata
 from pathlib import Path
 from typing import Iterable, List, Optional, Sequence, Tuple
 import pandas as pd
+from scripts.core.text_utils import norm_tag as _norm_text, split_tags
 
 
 # ==============================================================================
@@ -39,8 +40,8 @@ for col in [
 DF["age_range"] = (
     DF["age_range"].astype(str).str.replace("–", "-", regex=False).str.replace("—", "-", regex=False)
 )
-DF["themes_norm"] = DF["themes"].apply(_split_tags) if "themes" in DF.columns else [[] for _ in range(len(DF))]
-DF["tones_norm"]  = DF["tone"].apply(_split_tags)   if "tone"   in DF.columns else [[] for _ in range(len(DF))]
+DF["themes_norm"] = DF["themes"].apply(split_tags) if "themes" in DF.columns else [[] for _ in range(len(DF))]
+DF["tones_norm"]  = DF["tone"].apply(split_tags)   if "tone"   in DF.columns else [[] for _ in range(len(DF))]
 
 
 # ==============================================================================
@@ -53,30 +54,6 @@ def _norm_text(s: str) -> str:
     s = s.lower()
     s = re.sub(r"\s+", " ", s).strip()
     return s
-
-
-def _split_tags(s: str) -> List[str]:
-    """Split a tag field into a normalized, de-duplicated list of strings."""
-    s = str(s or "")
-
-    # If tags look like a JSON array, parse them
-    if s.strip().startswith("[") and s.strip().endswith("]"):
-        try:
-            arr = json.loads(s)
-            parts = [str(x) for x in arr if isinstance(x, str)]
-        except Exception:
-            parts = [s]
-    else:
-        # split on commas / semicolons / pipes / slashes
-        parts = re.split(r"[;,/|]+", s)
-
-    seen, out = set(), []
-    for p in parts:
-        n = _norm_text(p)
-        if n and n not in seen:
-            seen.add(n)
-            out.append(n)
-    return out
 
 
 TONE_SYNONYMS: dict[str, list[str]] = {

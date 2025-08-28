@@ -6,6 +6,8 @@ free‑text queries. This pass focuses on clarity and consistent behavior.
 from __future__ import annotations
 import re
 from typing import Iterable, List
+import json
+import unicodedata
 
 
 # -----------------------------------------------------------------------------
@@ -15,6 +17,41 @@ from typing import Iterable, List
 def norm(s: str) -> str:
     """Lowercase, collapse internal whitespace, and strip."""
     return re.sub(r"\s+", " ", str(s or "").strip().lower())
+
+
+def norm_tag(s: str) -> str:
+    """Lowercase, NFKD normalize, collapse whitespace, strip."""
+    s = unicodedata.normalize("NFKD", str(s or ""))
+    s = s.lower()
+    s = re.sub(r"\s+", " ", s).strip()
+    return s
+
+def split_tags(s: str) -> list[str]:
+    """Split a tag field into a normalized, de-duplicated list of strings.
+
+    Supports either JSON arrays (e.g., '["magic","friendship"]') or
+    delimited text (commas/semicolons/pipes/slashes). Preserves order.
+    """
+    s = str(s or "").strip()
+
+    parts: list[str] = []
+    if s.startswith("[") and s.endswith("]"):
+        try:
+            arr = json.loads(s)
+            if isinstance(arr, list):
+                parts = [str(x) for x in arr if isinstance(x, str)]
+        except Exception:
+            parts = [s]
+    else:
+        parts = re.split(r"[;,/|]+", s)
+
+    seen, out = set(), []
+    for p in parts:
+        n = norm_tag(p)
+        if n and n not in seen:
+            seen.add(n)
+            out.append(n)
+    return out
 
 
 # -----------------------------------------------------------------------------
@@ -142,6 +179,8 @@ def strip_age_category_tokens(themes: Iterable[str], user_text: str) -> List[str
 
 __all__ = [
     "norm",
+    "norm_tag", 
+    "split_tags",
     "BASE_STOPWORDS",
     "TITLE_STOPWORDS",
     "tokenize_alpha",
