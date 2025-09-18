@@ -365,7 +365,7 @@ class HybridRecommendationEngine:
         """Load your book catalog using existing data_io functions and enhance with lexile scores"""
         try:
             # Try to use your existing data loading with correct path
-            data_path = ROOT / "data" / "raw" / "books_final_complete.csv"
+            data_path = ROOT / "data" / "books_final_complete.csv"
             self.catalog_df = load_catalog(str(data_path))
             self.catalog_index = build_index(self.catalog_df)
             logger.info(f"✓ Loaded catalog with {len(self.catalog_df)} books")
@@ -374,7 +374,7 @@ class HybridRecommendationEngine:
             logger.warning(f"Could not load catalog with existing functions: {e}")
             # Fallback: direct pandas loading
             try:
-                data_path = ROOT / "data" / "raw" / "books_final_complete.csv"
+                data_path = ROOT / "data" / "books_final_complete.csv"
                 self.catalog_df = pd.read_csv(data_path).fillna("")
                 logger.info(f"✓ Loaded catalog directly with {len(self.catalog_df)} books")
             except Exception as e2:

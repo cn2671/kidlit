@@ -1,9 +1,0 @@
-{
-  "mae": 64.96,
-  "rmse": 83.12953747014355,
-  "r2": 0.6919508910918206,
-  "validation_size": 50,
-  "model_performance": {
-    "high_confidence_mae": 66.41666666666667
-  }
-}
