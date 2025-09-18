@@ -24,43 +24,72 @@ import logging
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Import your existing modules
+# Import app-local modules only (for standalone deployment)
 try:
-    from scripts.core.parse_query import parse_user_query
-    from scripts.core.recommender import recommend_books, parse_age_span
-    from scripts.core.text_utils import split_tags
-    from webapp.data_io import load_catalog, build_index
     from hybrid_query_parser import hybrid_parse_query
-
+    print("✅ Hybrid query parser imported successfully")
 except ImportError as e:
-    print(f"Warning: Could not import some modules: {e}")
-    # Fallback implementations will be provided
+    print(f"Warning: Could not import hybrid_query_parser: {e}")
+    hybrid_parse_query = None
 
-# Import enhanced Lexile predictor with enriched scores
+# Import enhanced Lexile predictor (standalone version)
 try:
-    # First try the new enhanced predictor
-    from scripts.core.enriched_predictor import EnrichedLexilePredictor
-    print("✅ Enhanced Lexile predictor with enriched scores imported successfully")
+    from production_lexile_predictor import ProductionLexilePredictor
+    print("✅ Production Lexile predictor imported successfully")
     LEXILE_PREDICTOR_AVAILABLE = True
-    predictor_class = EnrichedLexilePredictor
-except ImportError:
+    predictor_class = ProductionLexilePredictor
+except ImportError as e:
+    print(f"❌ Could not import Lexile predictor: {e}")
+    LEXILE_PREDICTOR_AVAILABLE = False
+    predictor_class = None
+
+# Fallback implementations for missing modules
+def parse_age_span(age_range):
+    """Parse age range string into min and max ages"""
+    if not age_range or pd.isna(age_range):
+        return None, None
+
+    age_str = str(age_range).strip().lower()
+
+    if '+' in age_str:
+        # Handle "13+" format
+        min_age = int(age_str.replace('+', ''))
+        max_age = 18  # Assume max of 18 for teens
+        return min_age, max_age
+    elif '-' in age_str:
+        # Handle "6-8" format
+        parts = age_str.split('-')
+        if len(parts) == 2:
+            try:
+                min_age = int(parts[0])
+                max_age = int(parts[1])
+                return min_age, max_age
+            except ValueError:
+                pass
+
+    # Try to extract single number
+    import re
+    numbers = re.findall(r'\d+', age_str)
+    if numbers:
+        age = int(numbers[0])
+        return age, age
+
+    return None, None
+
+def load_catalog():
+    """Load the book catalog from CSV"""
     try:
-        # Fallback to production predictor
-        from scripts.production.production_lexile_predictor import ProductionLexilePredictor
-        print("✅ Production Lexile predictor imported from scripts")
-        LEXILE_PREDICTOR_AVAILABLE = True
-        predictor_class = ProductionLexilePredictor
-    except ImportError:
-        try:
-            # Last fallback to local import
-            from production_lexile_predictor import ProductionLexilePredictor
-            print("✅ Production Lexile predictor imported successfully")
-            LEXILE_PREDICTOR_AVAILABLE = True
-            predictor_class = ProductionLexilePredictor
-        except ImportError as e:
-            print(f"⚠️  Could not import any Lexile predictor: {e}")
-            LEXILE_PREDICTOR_AVAILABLE = False
-            predictor_class = None
+        catalog_path = Path("data/books_final_complete.csv")
+        if catalog_path.exists():
+            df = pd.read_csv(catalog_path)
+            print(f"✓ Loaded catalog with {len(df)} books")
+            return df
+        else:
+            print(f"❌ Catalog file not found at {catalog_path}")
+            return pd.DataFrame()
+    except Exception as e:
+        print(f"❌ Error loading catalog: {e}")
+        return pd.DataFrame()
 
 app = Flask(__name__)
 CORS(app)
@@ -362,24 +391,16 @@ class HybridRecommendationEngine:
             logger.error(traceback.format_exc())
     
     def load_catalog(self):
-        """Load your book catalog using existing data_io functions and enhance with lexile scores"""
+        """Load your book catalog using standalone function"""
         try:
-            # Try to use your existing data loading with correct path
-            data_path = ROOT / "data" / "books_final_complete.csv"
-            self.catalog_df = load_catalog(str(data_path))
-            self.catalog_index = build_index(self.catalog_df)
+            # Use the standalone load_catalog function
+            self.catalog_df = load_catalog()
+            self.catalog_index = {}
             logger.info(f"✓ Loaded catalog with {len(self.catalog_df)} books")
             
         except Exception as e:
-            logger.warning(f"Could not load catalog with existing functions: {e}")
-            # Fallback: direct pandas loading
-            try:
-                data_path = ROOT / "data" / "books_final_complete.csv"
-                self.catalog_df = pd.read_csv(data_path).fillna("")
-                logger.info(f"✓ Loaded catalog directly with {len(self.catalog_df)} books")
-            except Exception as e2:
-                logger.error(f"Could not load catalog at all: {e2}")
-                self.catalog_df = pd.DataFrame()
+            logger.error(f"Could not load catalog: {e}")
+            self.catalog_df = pd.DataFrame()
         
         # Enhance catalog with lexile scores using EnrichedLexilePredictor
         if not self.catalog_df.empty:
