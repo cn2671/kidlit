@@ -1,18 +1,23 @@
 # 🚀 KidLit Curator - Vercel Deployment Guide
 
-## Quick Deploy Steps
+## 📋 Branch Structure
+
+**Three branches for different purposes:**
+- `main` - Complete development environment with all files
+- `production-webapp-v1` - Full project with webapp + analysis tools
+- `production-deploy` - **Lean deployment branch (RECOMMENDED FOR VERCEL)**
+
+## 🚀 Quick Deploy Steps
 
 ### 1. Push to GitHub
 ```bash
-git add .
-git commit -m "Prepare for Vercel deployment"
-git push origin production-webapp-v1
+git push origin production-deploy
 ```
 
 ### 2. Deploy to Vercel
 1. **Sign up**: Go to [vercel.com](https://vercel.com) and sign up with your GitHub account
 2. **Import Project**: Click "Import Project" and select your `kidlit` repository
-3. **Select Branch**: Choose the `production-webapp-v1` branch
+3. **Select Branch**: Choose the `production-deploy` branch ⭐
 4. **Configure**:
    - Framework Preset: **Other**
    - Root Directory: Leave as default (root)
@@ -25,18 +30,31 @@ After deployment, you'll get a URL like:
 - `https://kidlit-curator-[your-username].vercel.app`
 - You can also get a custom domain later
 
-## Project Structure (Vercel-Ready)
+## 📦 Production-Deploy Branch Structure
+**Optimized for fast, lean deployment:**
 ```
-kidlit/
+kidlit/ (production-deploy branch)
 ├── app/
-│   ├── flask_backend.py    # Main Flask application
-│   ├── app.html           # Frontend interface
-│   ├── models/            # ML models directory
-│   └── data/              # Book catalog data
-├── requirements.txt       # Python dependencies
-├── vercel.json           # Vercel configuration
-└── .gitignore           # Excludes large files
+│   ├── flask_backend.py           # Main Flask application
+│   ├── app.html                  # Frontend interface
+│   ├── hybrid_query_parser.py    # Smart search parser
+│   ├── production_lexile_predictor.py # ML predictor
+│   └── models/                   # All ML models (15+ files)
+├── data/
+│   ├── books_final_complete.csv  # Complete book catalog
+│   ├── enriched_lexile_scores.csv # Enhanced predictions
+│   └── age_model.joblib          # Age classification model
+├── requirements.txt              # Minimal Flask dependencies
+├── vercel.json                  # Vercel configuration
+├── VERCEL_DEPLOYMENT.md         # This guide
+└── .gitignore                   # Excludes system files
 ```
+
+**What's removed for deployment:**
+- Analysis scripts and notebooks
+- Streamlit app dependencies
+- Research and development files
+- Extra data processing tools
 
 ## What's Included
 ✅ **Flask Backend** - Complete API with ML integration
