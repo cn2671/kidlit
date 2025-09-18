@@ -1,30 +1,31 @@
-# Dependencies
-node_modules/
-/.pnp
-.pnp.js
+# Large data files
+data/external/goodreads_books.json.gz
+data/external/goodreads_book_authors.json.gz
+data/external/goodreads_book_genres_initial.json.gz
 
-# Testing
-/coverage
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Production
-/build
-/dist
-
-# Misc
-.DS_Store
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Debug logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# IDE
-.idea/
+# IDE files
 .vscode/
+.idea/
 *.swp
-*.swo 
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model files that are too large
+*.joblib.large
+*.pkl.large
+
+# Logs
+*.log

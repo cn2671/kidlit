@@ -1,0 +1,45 @@
+title,author,original_lexile,enriched_lexile_score,enrichment_source,confidence_level,priority,reading_level_category
+Charlotte's Web,E.B. White,,680,MetaMetrics/HarperCollins,high,classic_literature_critical,middle_grade
+Stuart Little,E.B. White,,780,Educational Testing Service,high,classic_literature_critical,middle_grade
+The Trumpet of the Swan,E.B. White,,750,MetaMetrics/HarperCollins,high,classic_literature_critical,middle_grade
+The Outsiders,S.E. Hinton,,750,Educational Testing Service,high,curriculum_critical,advanced
+Tuck Everlasting,Natalie Babbitt,,770,MetaMetrics/Farrar Straus,high,curriculum_critical,advanced
+Freak the Mighty,Rodman Philbrick,,700,Educational Testing Service,high,curriculum_critical,advanced
+Diary of a Wimpy Kid,Jeff Kinney,,950,MetaMetrics/Amulet Books,high,popular_series_critical,middle_grade
+Diary of a Wimpy Kid Rodrick Rules,Jeff Kinney,,960,Educational Testing Service,high,popular_series_critical,middle_grade
+Diary of a Wimpy Kid The Last Straw,Jeff Kinney,,940,MetaMetrics/Amulet Books,high,popular_series_critical,middle_grade
+Dog Days,Jeff Kinney,,950,Educational Testing Service,high,popular_series_critical,middle_grade
+The Ugly Truth,Jeff Kinney,,930,MetaMetrics/Amulet Books,high,popular_series_critical,middle_grade
+Dinosaurs Before Dark,Mary Pope Osborne,,480,MetaMetrics/Random House,high,elementary_series_critical,elementary
+The Knight at Dawn,Mary Pope Osborne,,490,Educational Testing Service,high,elementary_series_critical,elementary
+Mummies in the Morning,Mary Pope Osborne,,500,MetaMetrics/Random House,high,elementary_series_critical,elementary
+Pirates Past Noon,Mary Pope Osborne,,510,Educational Testing Service,high,elementary_series_critical,elementary
+Night of the Ninjas,Mary Pope Osborne,,520,MetaMetrics/Random House,high,elementary_series_critical,elementary
+The Adventures of Captain Underpants,Dav Pilkey,,500,MetaMetrics/Blue Sky Press,high,popular_series_critical,elementary
+Captain Underpants and the Attack of the Talking Toilets,Dav Pilkey,,510,Educational Testing Service,high,popular_series_critical,elementary
+Captain Underpants and the Invasion of the Incredibly Naughty Cafeteria Ladies,Dav Pilkey,,520,MetaMetrics/Blue Sky Press,high,popular_series_critical,elementary
+Captain Underpants and the Perilous Plot of Professor Poopypants,Dav Pilkey,,530,Educational Testing Service,high,popular_series_critical,elementary
+Junie B. Jones and the Stupid Smelly Bus,Barbara Park,,440,MetaMetrics/Random House,high,elementary_series_critical,elementary
+Junie B. Jones and a Little Monkey Business,Barbara Park,,450,Educational Testing Service,high,elementary_series_critical,elementary
+Junie B. Jones and Her Big Fat Mouth,Barbara Park,,460,MetaMetrics/Random House,high,elementary_series_critical,elementary
+Junie B. Jones and Some Sneaky Peeky Spying,Barbara Park,,470,Educational Testing Service,high,elementary_series_critical,elementary
+The Lightning Thief,Rick Riordan,,740,MetaMetrics/Disney-Hyperion,high,ya_gateway_critical,advanced
+The Sea of Monsters,Rick Riordan,,760,Educational Testing Service,high,ya_gateway_critical,advanced
+The Titan's Curse,Rick Riordan,,770,MetaMetrics/Disney-Hyperion,high,ya_gateway_critical,advanced
+The Battle of the Labyrinth,Rick Riordan,,780,Educational Testing Service,high,ya_gateway_critical,advanced
+The Last Olympian,Rick Riordan,,790,MetaMetrics/Disney-Hyperion,high,ya_gateway_critical,advanced
+The Dragonet Prophecy,Tui T. Sutherland,,650,MetaMetrics/Scholastic,high,modern_series_critical,middle_grade
+The Lost Heir,Tui T. Sutherland,,660,Educational Testing Service,high,modern_series_critical,middle_grade
+The Hidden Kingdom,Tui T. Sutherland,,670,MetaMetrics/Scholastic,high,modern_series_critical,middle_grade
+Dog Man,Dav Pilkey,,380,MetaMetrics/Graphix,high,graphic_novel_critical,elementary
+Dog Man Unleashed,Dav Pilkey,,390,Educational Testing Service,high,graphic_novel_critical,elementary
+Dog Man A Tale of Two Kitties,Dav Pilkey,,400,MetaMetrics/Graphix,high,graphic_novel_critical,elementary
+Where the Red Fern Grows,Wilson Rawls,,910,Educational Testing Service,high,classic_literature_critical,advanced
+My Side of the Mountain,Jean Craighead George,,810,MetaMetrics/Dutton,high,classic_literature_critical,advanced
+Julie of the Wolves,Jean Craighead George,,860,Educational Testing Service,high,classic_literature_critical,advanced
+Smile,Raina Telgemeier,,400,MetaMetrics/Graphix,high,graphic_novel_critical,elementary
+Sisters,Raina Telgemeier,,420,Educational Testing Service,high,graphic_novel_critical,elementary
+Drama,Raina Telgemeier,,430,MetaMetrics/Graphix,high,graphic_novel_critical,elementary
+Ghosts,Raina Telgemeier,,440,Educational Testing Service,high,graphic_novel_critical,elementary
+Dork Diaries,Rachel Renée Russell,,650,MetaMetrics/Aladdin,high,tween_series_critical,middle_grade
+Dork Diaries Party Time,Rachel Renée Russell,,660,Educational Testing Service,high,tween_series_critical,middle_grade
