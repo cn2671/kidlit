@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app/flask_backend.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "250mb"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/app.html",
+      "dest": "/app/app.html"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/app/flask_backend.py"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/app/flask_backend.py"
+    }
+  ],
+  "env": {
+    "PYTHONPATH": "/var/task"
+  },
+  "functions": {
+    "app/flask_backend.py": {
+      "maxDuration": 30
+    }
+  }
+}

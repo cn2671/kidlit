@@ -3012,11 +3012,15 @@ def get_adaptive_search_options():
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
+# Vercel serverless function handler
+def handler(req, res):
+    return app(req, res)
+
 if __name__ == '__main__':
     print("🚀 Starting Enhanced KidLit Curator with ML Integration")
     print(f"📊 ML Models: {'✓ Loaded' if recommendation_engine and recommendation_engine.ml_models else '❌ Not loaded'}")
     print(f"📚 Catalog: {'✓ Loaded' if recommendation_engine and recommendation_engine.catalog_df is not None else '❌ Not loaded'}")
     print(f"🎯 Lexile Predictor: {'✅ Ready' if lexile_predictor else '❌ Not available'}")
     print("🌐 Open your browser to: http://127.0.0.1:5001")
-    
+
     app.run(debug=True, host='127.0.0.1', port=5001)
