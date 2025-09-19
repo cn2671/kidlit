@@ -10,13 +10,20 @@ node_modules/
 /build
 /dist
 
-# Misc
-.DS_Store
+# Environment variables and secrets
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+
+# API Keys and secrets (CRITICAL)
+*.key
+*_key
+*api_key*
+
+# Misc
+.DS_Store
 
 # Debug logs
 npm-debug.log*
@@ -27,4 +34,4 @@ yarn-error.log*
 .idea/
 .vscode/
 *.swp
-*.swo 
+*.swo
