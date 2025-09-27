@@ -2,24 +2,15 @@
   "functions": {
     "app/flask_backend.py": {
       "maxDuration": 30,
-      "memory": 1024
+      "memory": 1024,
+      "excludeFiles": [
+        "app/__pycache__/**",
+        "**/__pycache__/**",
+        "**/*.pyc",
+        ".git/**"
+      ]
     }
   },
-  "builds": [
-    {
-      "src": "app/flask_backend.py",
-      "use": "@vercel/python",
-      "config": {
-        "maxLambdaSize": "250mb",
-        "excludeFiles": [
-          "app/__pycache__/**",
-          "**/__pycache__/**",
-          "**/*.pyc",
-          ".git/**"
-        ]
-      }
-    }
-  ],
   "routes": [
     {
       "src": "/app.html",

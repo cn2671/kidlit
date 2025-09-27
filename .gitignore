@@ -22,6 +22,20 @@ node_modules/
 *_key
 *api_key*
 
+# Large data files
+data/external/*.json.gz
+data/external/*.zip
+data/external/*.xlsx
+data/external/*.csv
+models/*.pkl
+*.joblib
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
 # Misc
 .DS_Store
 
@@ -35,3 +49,4 @@ yarn-error.log*
 .vscode/
 *.swp
 *.swo
+.vercel
