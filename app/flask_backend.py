@@ -1178,6 +1178,16 @@ def app_html():
     """Serve the app.html file"""
     return send_from_directory('.', 'app.html')
 
+@app.route('/sample_books.json')
+def sample_books():
+    """Serve the sample books JSON file"""
+    return send_from_directory('.', 'sample_books.json')
+
+@app.route('/styles.css')
+def styles():
+    """Serve the CSS file"""
+    return send_from_directory('.', 'styles.css')
+
 
 
 @app.route('/api/predict', methods=['POST'])
