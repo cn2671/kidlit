@@ -3017,6 +3017,10 @@ if __name__ == '__main__':
     print(f"📊 ML Models: {'✓ Loaded' if recommendation_engine and recommendation_engine.ml_models else '❌ Not loaded'}")
     print(f"📚 Catalog: {'✓ Loaded' if recommendation_engine and recommendation_engine.catalog_df is not None else '❌ Not loaded'}")
     print(f"🎯 Lexile Predictor: {'✅ Ready' if lexile_predictor else '❌ Not available'}")
-    print("🌐 Open your browser to: http://127.0.0.1:5001")
-    
-    app.run(debug=True, host='127.0.0.1', port=5001)
+    # Railway deployment support
+    port = int(os.environ.get('PORT', 5001))
+    host = '0.0.0.0' if 'PORT' in os.environ else '127.0.0.1'
+    debug = 'PORT' not in os.environ  # Disable debug in production
+
+    print(f"🌐 Starting server on {host}:{port}")
+    app.run(debug=debug, host=host, port=port)
