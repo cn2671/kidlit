@@ -1444,4 +1444,21 @@ li {
 
 li:last-child {
     margin-bottom: 0;
-}/* KidLit Curator Styles */
+}
+
+/* Mobile responsive: Show only emojis in action buttons */
+@media (max-width: 768px) {
+    .action-btn .btn-text {
+        display: none;
+    }
+
+    .action-btn {
+        font-size: 20px;
+        padding: 12px;
+        min-width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}

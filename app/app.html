@@ -1329,13 +1329,13 @@
                                         
                             <div class="k-actions-row">
                                 <button onclick="saveBook(${index}, 'favorites')" class="action-btn like-btn">
-                                    👍 Like
+                                    👍<span class="btn-text"> Like</span>
                                 </button>
                                 <button onclick="saveBook(${index}, 'skipped')" class="action-btn skip-btn">
-                                    👎 Skip
+                                    👎<span class="btn-text"> Skip</span>
                                 </button>
                                 <button onclick="saveBook(${index}, 'read')" class="action-btn read-btn">
-                                    📖 Read
+                                    📖<span class="btn-text"> Read</span>
                                 </button>
                             </div>
                             
@@ -2513,17 +2513,17 @@
                     <div class="k-divider"></div>
                     <div class="k-header-actions">
                         <div class="k-actions-row">
-                            <button class="action-btn ${isLiked ? 'liked' : ''}" 
+                            <button class="action-btn ${isLiked ? 'liked' : ''}"
                                     onclick="toggleFavorite('${book.title}', '${book.author}')">
-                                ❤️ ${isLiked ? 'Liked' : 'Like'}
+                                ❤️<span class="btn-text"> ${isLiked ? 'Liked' : 'Like'}</span>
                             </button>
-                            <button class="action-btn ${isRead ? 'read' : ''}" 
+                            <button class="action-btn ${isRead ? 'read' : ''}"
                                     onclick="toggleRead('${book.title}', '${book.author}')">
-                                📖 ${isRead ? 'Read' : 'Mark Read'}
+                                📖<span class="btn-text"> ${isRead ? 'Read' : 'Mark Read'}</span>
                             </button>
-                            <button class="action-btn ${isSkipped ? 'skipped' : ''}" 
+                            <button class="action-btn ${isSkipped ? 'skipped' : ''}"
                                     onclick="toggleSkipped('${book.title}', '${book.author}')">
-                                🚫 ${isSkipped ? 'Skipped' : 'Skip'}
+                                🚫<span class="btn-text"> ${isSkipped ? 'Skipped' : 'Skip'}</span>
                             </button>
                         </div>
                     </div>
