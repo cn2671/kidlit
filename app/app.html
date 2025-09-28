@@ -2282,6 +2282,9 @@
 
     <script>
         
+        // Configuration - Base URL for API calls
+        const BASE_URL = window.location.origin;
+
         // App State
         let appState = {
             currentPage: 'home',
@@ -2297,7 +2300,7 @@
         // Theme and Tone Groups Management
         async function loadThemeToneGroups() {
             try {
-                const response = await fetch('http://127.0.0.1:5001/api/theme-tone-groups');
+                const response = await fetch(`${BASE_URL}/api/theme-tone-groups`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -20194,7 +20197,7 @@
                 };
                 
                 
-                const response = await fetch('http://127.0.0.1:5001/api/simple-search', {
+                const response = await fetch(`${BASE_URL}/api/simple-search`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -20243,7 +20246,7 @@
                 resultsContainer.innerHTML = '';
             }
             
-            fetch('http://127.0.0.1:5001/api/simple-search', {
+            fetch(`${BASE_URL}/api/simple-search`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -20316,7 +20319,7 @@
                             <div class="book-header">
                                 <div class="book-cover">
                                     ${book.cover_url ? 
-                                        `<img src="http://127.0.0.1:5001/api/proxy-image?url=${encodeURIComponent(book.cover_url)}" alt="${book.title}" />
+                                        `<img src="${BASE_URL}/api/proxy-image?url=${encodeURIComponent(book.cover_url)}" alt="${book.title}" />
                                         <div class="book-cover-placeholder" style="display: none;">📚</div>` 
                                         : 
                                         `<div class="book-cover-placeholder">📚</div>`
@@ -20433,7 +20436,7 @@
                     return;
                 }
                 
-                const response = await fetch('http://127.0.0.1:5001/api/save-book', {
+                const response = await fetch(`${BASE_URL}/api/save-book`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -20675,7 +20678,7 @@
             });
             document.querySelector(`[data-list="${listType}"]`).classList.add('active');
             
-            const response = await fetch(`http://127.0.0.1:5001/api/get-user-books/${listType}`);
+            const response = await fetch(`${BASE_URL}/api/get-user-books/${listType}`);
             const result = await response.json();
             
             if (result.success) {
@@ -20721,7 +20724,7 @@
                             <div class="k-header-row">
                                 <div class="k-cover">
                                     ${book.cover_url ? 
-                                        `<img src="http://127.0.0.1:5001/api/proxy-image?url=${encodeURIComponent(book.cover_url)}" alt="${book.title}" style="width: 80px; height: 120px; border-radius: 10px; object-fit: cover;" 
+                                        `<img src="${BASE_URL}/api/proxy-image?url=${encodeURIComponent(book.cover_url)}" alt="${book.title}" style="width: 80px; height: 120px; border-radius: 10px; object-fit: cover;" 
                                         <div style="display: none; width: 80px; height: 120px; border-radius: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); align-items: center; justify-content: center; color: white; font-size: 24px;">📚</div>` 
                                         : 
                                         `<div style="width: 80px; height: 120px; border-radius: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 24px;">📚</div>`
@@ -20772,7 +20775,7 @@
     async function removeFromList(encodedTitle, listType) {
         try {
             const title = decodeURIComponent(encodedTitle);
-            const response = await fetch('http://127.0.0.1:5001/api/remove-book', {
+            const response = await fetch(`${BASE_URL}/api/remove-book`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({title: title, list_type: listType})
@@ -21151,7 +21154,7 @@
             // Debounce the search
             searchTimeout = setTimeout(async () => {
                 try {
-                    const response = await fetch(`http://127.0.0.1:5001/api/book-suggestions?q=${encodeURIComponent(query)}`);
+                    const response = await fetch(`${BASE_URL}/api/book-suggestions?q=${encodeURIComponent(query)}`);
                     
                     if (!response.ok) {
                         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -21381,7 +21384,7 @@
             
             try {
                 // Call the enhanced Lexile prediction API
-                const response = await fetch('http://127.0.0.1:5001/api/predict-lexile', {
+                const response = await fetch(`${BASE_URL}/api/predict-lexile`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -21602,7 +21605,7 @@
             }
             
             // Use the same endpoint as AI Book Analysis for consistency
-            fetch(`http://127.0.0.1:5001/api/book-suggestions?q=${encodeURIComponent(query)}`)
+            fetch(`${BASE_URL}/api/book-suggestions?q=${encodeURIComponent(query)}`)
             .then(response => {
                 return response.json();
             })
@@ -21640,7 +21643,7 @@
             }
             
             // Search for books to select from
-            fetch('http://127.0.0.1:5001/api/simple-search', {
+            fetch(`${BASE_URL}/api/simple-search`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({query: query, page: 1, per_page: 12})
@@ -21744,7 +21747,7 @@
             }
             
             // Get progression recommendations
-            fetch('http://127.0.0.1:5001/api/simple-search', {
+            fetch(`${BASE_URL}/api/simple-search`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({query: searchQuery, page: 1, per_page: 12, difficulty_level: selectedDifficulty})
@@ -21760,7 +21763,7 @@
                 } else {
                     // Fallback: search for books in same age range
                     const fallbackQuery = baseBook.age_range || 'books for children';
-                    return fetch('http://127.0.0.1:5001/api/simple-search', {
+                    return fetch(`${BASE_URL}/api/simple-search`, {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({query: fallbackQuery, page: 1, per_page: 12})
@@ -21823,7 +21826,7 @@
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <div style="width: 50px; height: 75px; border-radius: 6px; overflow: hidden;">
                             ${baseBook.cover_url ? 
-                                `<img src="http://127.0.0.1:5001/api/proxy-image?url=${encodeURIComponent(baseBook.cover_url)}" alt="${baseBook.title}" 
+                                `<img src="${BASE_URL}/api/proxy-image?url=${encodeURIComponent(baseBook.cover_url)}" alt="${baseBook.title}" 
                                     style="width: 100%; height: 100%; object-fit: cover;" 
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                 <div style="display: none; width: 50px; height: 75px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px; align-items: center; justify-content: center; color: white; font-size: 20px;">📚</div>` 
@@ -22370,7 +22373,7 @@
             
             resultsContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Finding similar books...</div>';
             
-            fetch('http://127.0.0.1:5001/api/similar', {
+            fetch(`${BASE_URL}/api/similar`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
@@ -22406,7 +22409,7 @@
                     <div style="display: flex; gap: 15px; align-items: center;">
                         <div style="width: 50px; height: 75px; border-radius: 6px; overflow: hidden;">
                             ${baseBook.cover_url ? 
-                                `<img src="http://127.0.0.1:5001/api/proxy-image?url=${encodeURIComponent(baseBook.cover_url)}" alt="${baseBook.title}" 
+                                `<img src="${BASE_URL}/api/proxy-image?url=${encodeURIComponent(baseBook.cover_url)}" alt="${baseBook.title}" 
                                     style="width: 100%; height: 100%; object-fit: cover;" 
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                                 <div style="display: none; width: 50px; height: 75px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px; align-items: center; justify-content: center; color: white; font-size: 20px;">📚</div>` 
@@ -22525,7 +22528,7 @@
                 }
                 
                 // Call our new Lexile prediction API
-                const response = await fetch('http://127.0.0.1:5001/api/predict-lexile', {
+                const response = await fetch(`${BASE_URL}/api/predict-lexile`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -22584,7 +22587,7 @@
                     <div class="book-header">
                         <div class="book-cover">
                             ${book.cover_url ?
-                                `<img src="http://127.0.0.1:5001/api/proxy-image?url=${encodeURIComponent(book.cover_url)}" alt="${book.title}"
+                                `<img src="${BASE_URL}/api/proxy-image?url=${encodeURIComponent(book.cover_url)}" alt="${book.title}"
                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                                 <div class="book-cover-placeholder" style="display: none;">📚</div>`
                                 :
@@ -22668,7 +22671,7 @@
                 const lexile = document.getElementById('searchBuilderLexile')?.value || '';
                 
                 
-                const response = await fetch('http://127.0.0.1:5001/api/adaptive-search-options', {
+                const response = await fetch(`${BASE_URL}/api/adaptive-search-options`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -22830,7 +22833,7 @@
             
             try {
                 // Check if we have any books for this combination
-                const checkResponse = await fetch('http://127.0.0.1:5001/api/adaptive-search-options', {
+                const checkResponse = await fetch(`${BASE_URL}/api/adaptive-search-options`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -22911,7 +22914,7 @@
         // Test a search query to see if it returns results
         async function testSearchQuery(query) {
             try {
-                const response = await fetch('http://127.0.0.1:5001/api/simple-search', {
+                const response = await fetch(`${BASE_URL}/api/simple-search`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -23078,7 +23081,7 @@
             if (!ctx) return;
 
             // Fetch live data from the API
-            fetch('http://127.0.0.1:5001/api/lexile-distribution')
+            fetch(`${BASE_URL}/api/lexile-distribution`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
